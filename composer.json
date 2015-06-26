@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": ">=5.4.1",
-        "avalanche123/imagine-bundle": "*",
+        "liip/imagine-bundle": "*",
         "smart-core/core-bundle": "dev-master"
     },
     "autoload": {
