@@ -3,6 +3,7 @@
 namespace SmartCore\Bundle\MediaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use FOS\UserBundle\Model\UserInterface;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -18,6 +19,7 @@ class File
 {
     use ColumnTrait\Id;
     use ColumnTrait\CreatedAt;
+    use ColumnTrait\FosUser;
 
     /**
      * @var bool
@@ -99,13 +101,6 @@ class File
     protected $size;
 
     /**
-     * @var int
-     *
-     * @ORM\Column(type="integer")
-     */
-    protected $user_id;
-
-    /**
      * @var FileTransformed[]
      *
      * @ORM\OneToMany(targetEntity="FileTransformed", mappedBy="file", cascade={"persist"}, fetch="EXTRA_LAZY")
@@ -124,7 +119,6 @@ class File
     {
         $this->created_at     = new \DateTime();
         $this->is_preuploaded = true;
-        $this->user_id        = 0;
         $this->storage        = null;
 
         if ($uploadedFile) {
@@ -405,26 +399,6 @@ class File
     public function getSize()
     {
         return $this->size;
-    }
-
-    /**
-     * @param int $user_id
-     *
-     * @return $this
-     */
-    public function setUserId($user_id)
-    {
-        $this->user_id = $user_id;
-
-        return $this;
-    }
-
-    /**
-     * @return int
-     */
-    public function getUserId()
-    {
-        return $this->user_id;
     }
 
     /**
