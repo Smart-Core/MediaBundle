@@ -2,6 +2,7 @@
 
 namespace SmartCore\Bundle\MediaBundle\Form\Type;
 
+use SmartCore\Bundle\MediaBundle\Entity\Storage;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -22,11 +23,11 @@ class StorageFormType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
-            'data_class' => 'SmartCore\Bundle\MediaBundle\Entity\Storage',
+            'data_class' => Storage::class,
         ]);
     }
 
-    public function getName()
+    public function getBlockPrefix()
     {
         return 'smart_media_storage';
     }

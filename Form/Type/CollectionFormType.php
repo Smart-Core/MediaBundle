@@ -29,7 +29,7 @@ class CollectionFormType extends AbstractType
         ]);
     }
 
-    public function getName()
+    public function getBlockPrefix()
     {
         return 'smart_media_storage';
     }
