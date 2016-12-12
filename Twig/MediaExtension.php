@@ -27,8 +27,8 @@ class MediaExtension extends \Twig_Extension
     public function getFunctions()
     {
         return [
-            'smart_media'     => new \Twig_Function_Method($this, 'generateFileUrl'),
-            'smart_media_img' => new \Twig_Function_Method($this, 'renderImgTag'),
+            new \Twig_SimpleFunction('smart_media',     [$this, 'generateFileUrl']),
+            new \Twig_SimpleFunction('smart_media_img', [$this, 'renderImgTag']),
         ];
     }
 
