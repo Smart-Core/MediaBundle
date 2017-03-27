@@ -145,4 +145,15 @@ class CollectionService
     {
         // @todo
     }
+
+    /**
+     * @param int    $id
+     * @param string $filter
+     *
+     * @return mixed|null
+     */
+    public function generateTransformedFile(int $id, $filter)
+    {
+        return $this->provider->generateTransformedFile($id, $filter);
+    }
 }

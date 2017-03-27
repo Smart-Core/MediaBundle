@@ -50,24 +50,46 @@ class MediaCloudService
      * @param int $id
      * @param string $filter
      *
-     * @return string
+     * @return string|null
      *
      * @todo кеширование.
      */
     public function getFileUrl($id, $filter = null)
     {
         if (!is_numeric($id)) {
-            return;
+            return null;
         }
 
         /** @var File $file */
         $file = $this->em->getRepository('SmartMediaBundle:File')->find($id);
 
         if (empty($file)) {
-            return;
+            return null;
         }
 
         return $this->getCollection($file->getCollection()->getId())->get($id, $filter);
+    }
+
+    /**
+     * @param int    $id
+     * @param string $filter
+     *
+     * @return mixed|null
+     */
+    public function generateTransformedFile(int $id, $filter)
+    {
+        if (!is_numeric($id)) {
+            return null;
+        }
+
+        /** @var File $file */
+        $file = $this->em->getRepository('SmartMediaBundle:File')->find($id);
+
+        if (empty($file)) {
+            return null;
+        }
+
+        return $this->getCollection($file->getCollection()->getId())->generateTransformedFile($id, $filter);
     }
 
     public function createCollection()

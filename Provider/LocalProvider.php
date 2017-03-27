@@ -68,66 +68,105 @@ class LocalProvider implements ProviderInterface
      *
      * @return string|null
      */
-    public function get($id, $filter = null, $default_filter = '200_200')
+    public function get($id, $filter = null, $default_filter = '200x200')
     {
         if (null === $id) {
-            return;
+            return null;
         }
 
         /** @var File $file */
         $file = $this->filesRepo->find($id);
 
         if (null === $file) {
-            return;
+            return null;
         }
 
         try {
             $this->container->get('liip_imagine.filter.configuration')->get($filter);
         } catch (\RuntimeException $e) {
-            $filter = $default_filter;
+            $filter = null;
         }
+
+        if ($filter === null) {
+            try {
+                $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
+
+                $filter = $default_filter;
+            } catch (\RuntimeException $e) {
+                // dummy
+            }
+        }
+
+        $ending = '';
 
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
             if (null === $fileTransformed) {
-                $imagine = $this->container->get('liip_imagine.binary.loader.default');
-                $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
-
-                if ($file->isMimeType('image/jpeg') or $file->isMimeType('image/png') or $file->isMimeType('image/gif')) {
-                    // dummy
-                } else {
-                    echo 'Unsupported image format';
-
-                    return;
-                }
-
-                $originalImage = $imagine->find($file->getFullRelativeUrl());
-
-                $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
-                if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
-                    throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
-                }
-
-                $transformedImagePath = $webDir.'/'.$file->getFilename();
-
-                file_put_contents($transformedImagePath, $imagineFilterManager->applyFilter($originalImage, $filter)->getContent());
-
-                $fileTransformed = new FileTransformed();
-                $fileTransformed
-                    ->setFile($file)
-                    ->setFilter($filter)
-                    ->setSize((new \SplFileInfo($transformedImagePath))->getSize())
-                ;
-
-                $this->em->persist($fileTransformed);
-                $this->em->flush($fileTransformed);
+                $ending = '?id='.$file->getId();
             }
         }
 
-        return $this->request->getBasePath().$file->getFullRelativeUrl($filter);
+        return $this->request->getBasePath().$file->getFullRelativeUrl($filter).$ending;
     }
 
+    /**
+     * @param int    $id
+     * @param string $filter
+     *
+     * @return null|mixed
+     */
+    public function generateTransformedFile(int $id, $filter)
+    {
+        /** @var File $file */
+        $file = $this->filesRepo->find($id);
+
+        if (null === $file) {
+            return null;
+        }
+
+        $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
+
+        if (null === $fileTransformed) {
+            $imagine = $this->container->get('liip_imagine.binary.loader.default');
+            $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
+
+            if ($file->isMimeType('image/jpeg') or $file->isMimeType('image/png') or $file->isMimeType('image/gif')) {
+                // dummy
+            } else {
+                echo 'Unsupported image format';
+
+                return null;
+            }
+
+            $originalImage = $imagine->find($file->getFullRelativeUrl());
+
+            $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
+            if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
+                throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
+            }
+
+            $transformedImagePath = $webDir.'/'.$file->getFilename();
+            $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter)->getContent();
+
+            file_put_contents($transformedImagePath, $transformedImage);
+
+            $fileTransformed = new FileTransformed();
+            $fileTransformed
+                ->setFile($file)
+                ->setFilter($filter)
+                ->setSize((new \SplFileInfo($transformedImagePath))->getSize())
+            ;
+
+            $this->em->persist($fileTransformed);
+            $this->em->flush($fileTransformed);
+
+            return $transformedImage;
+        }
+
+        return null;
+    }
+    
     /**
      * @param File $file
      *
