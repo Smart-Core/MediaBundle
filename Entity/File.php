@@ -3,7 +3,6 @@
 namespace SmartCore\Bundle\MediaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOS\UserBundle\Model\UserInterface;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
