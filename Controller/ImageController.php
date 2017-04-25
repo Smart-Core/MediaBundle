@@ -24,7 +24,9 @@ class ImageController extends Controller
 
         $response = new Response($newImage);
 
-        $response->headers->set('Content-Type', 'image/jpeg');
+        $filter_configuration = $this->get('liip_imagine.filter.configuration')->get($filter);
+
+        $response->headers->set('Content-Type', 'image/'.$filter_configuration['format']);
 
         return $response;
     }
