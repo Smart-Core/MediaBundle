@@ -156,4 +156,12 @@ class CollectionService
     {
         return $this->provider->generateTransformedFile($id, $filter);
     }
+
+    /**
+     * @return bool
+     */
+    public function purgeTransformedFiles()
+    {
+        return $this->provider->purgeTransformedFiles($this->collection);
+    }
 }

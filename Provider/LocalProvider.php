@@ -4,6 +4,7 @@ namespace SmartCore\Bundle\MediaBundle\Provider;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
+use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
 use SmartCore\Bundle\MediaBundle\Service\GeneratorService;
@@ -102,8 +103,10 @@ class LocalProvider implements ProviderInterface
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
+            $ending .= '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+
             if (null === $fileTransformed) {
-                $ending = '?id='.$file->getId();
+                $ending .= '?id='.$file->getId();
             }
         }
 
@@ -146,7 +149,9 @@ class LocalProvider implements ProviderInterface
                 throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
             }
 
-            $transformedImagePath = $webDir.'/'.$file->getFilename();
+            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+
+            $transformedImagePath = $webDir.'/'.$file->getFilename().$ending;
             $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter)->getContent();
 
             file_put_contents($transformedImagePath, $transformedImage);
@@ -230,6 +235,30 @@ class LocalProvider implements ProviderInterface
         return true;
     }
 
+    /**
+     * @param Collection $collection
+     *
+     * @return bool
+     */
+    public function purgeTransformedFiles(Collection $collection)
+    {
+        foreach ($this->container->get('liip_imagine.filter.configuration')->all() as $filter_name => $filter) {
+            $dir = getcwd().'/web'.$collection->getDefaultStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
+
+            if (is_dir($dir)) {
+                foreach(new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST) as $path
+                ) {
+                    $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+                }
+
+                rmdir($dir);
+            }
+        }
+
+        return true;
+    }
+    
     /**
      * Получить список файлов.
      *
