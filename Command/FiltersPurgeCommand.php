@@ -21,8 +21,6 @@ class FiltersPurgeCommand extends ContainerAwareCommand
         /** @var \Doctrine\ORM\EntityManager $em */
         $em = $this->getContainer()->get('doctrine.orm.entity_manager');
 
-        $filters = $this->getContainer()->get('liip_imagine.filter.configuration')->all();
-
         $output->writeln('<comment>Truncate FileTransformed Table...</comment>');
 
         $cmd = $em->getClassMetadata('SmartMediaBundle:FileTransformed');
@@ -34,10 +32,6 @@ class FiltersPurgeCommand extends ContainerAwareCommand
         $connection->query('SET FOREIGN_KEY_CHECKS=1');
 
         $output->writeln('<comment>Remove files...</comment>');
-
-        foreach ($filters as $name => $filter) {
-            dump($name);
-        }
 
         foreach ($em->getRepository('SmartMediaBundle:Collection')->findAll() as $collection) {
             $mc = $this->getContainer()->get('smart_media')->getCollection($collection->getId());
