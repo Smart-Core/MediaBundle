@@ -35,10 +35,14 @@ class StatsCommand extends ContainerAwareCommand
             ->setStyle($style)
         ;
 
+        $totalSize = 0;
+
         foreach ($em->getRepository('SmartMediaBundle:Collection')->findAll() as $collection) {
             $size = round($em->getRepository('SmartMediaBundle:File')->summarySize($collection) / 1024 / 1024, 2);
             $filtersSize = round($em->getRepository('SmartMediaBundle:FileTransformed')->summarySize($collection) / 1024 / 1024, 2);
             $sum = $size + $filtersSize;
+
+            $totalSize += $sum;
 
             $table->addRow([
                 $collection->getId(),
@@ -52,5 +56,7 @@ class StatsCommand extends ContainerAwareCommand
         }
 
         $table->render();
+
+        $output->writeln('Total size: '.$totalSize.' MB');
     }
 }
