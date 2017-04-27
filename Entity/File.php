@@ -3,12 +3,11 @@
 namespace SmartCore\Bundle\MediaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOS\UserBundle\Model\UserInterface;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="FileRepository")
  * @ORM\Table(name="media_files",
  *      indexes={
  *          @ORM\Index(columns={"size"}),

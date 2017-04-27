@@ -44,6 +44,5 @@ class FiltersPurgeCommand extends ContainerAwareCommand
 
             $mc->purgeTransformedFiles();
         }
-
     }
 }

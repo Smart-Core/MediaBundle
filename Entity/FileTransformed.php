@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="FileTransformedRepository")
  * @ORM\Table(name="media_files_transformed",
  *      uniqueConstraints={
  *          @ORM\UniqueConstraint(columns={"filter", "file_id"}),
