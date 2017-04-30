@@ -110,7 +110,9 @@ class LocalProvider implements ProviderInterface
             }
         }
 
-        return $this->request->getBasePath().$file->getFullRelativeUrl($filter).$ending;
+        $transformedImagePathInfo = pathinfo($this->request->getBasePath().$file->getFullRelativeUrl($filter));
+
+        return $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
     }
 
     /**
@@ -151,7 +153,8 @@ class LocalProvider implements ProviderInterface
 
             $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
 
-            $transformedImagePath = $webDir.'/'.$file->getFilename().$ending;
+            $transformedImagePathInfo = pathinfo($webDir.'/'.$file->getFilename());
+            $transformedImagePath = $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
             $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter)->getContent();
 
             file_put_contents($transformedImagePath, $transformedImage);
