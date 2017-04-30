@@ -22,10 +22,9 @@ class ImageController extends Controller
     {
         $newImage = $this->get('smart_media')->generateTransformedFile($request->query->get('id', 0), $filter);
 
-        $response = new Response($newImage);
-
         $filter_configuration = $this->get('liip_imagine.filter.configuration')->get($filter);
 
+        $response = new Response($newImage);
         $response->headers->set('Content-Type', 'image/'.$filter_configuration['format']);
 
         return $response;

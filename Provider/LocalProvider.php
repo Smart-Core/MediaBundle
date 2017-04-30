@@ -106,7 +106,9 @@ class LocalProvider implements ProviderInterface
             $ending .= '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
 
             if (null === $fileTransformed) {
-                $ending .= '?id='.$file->getId();
+//                $ending .= '?id='.$file->getId();
+
+                return $this->request->getBasePath().$file->getStorage()->getRelativePath().$file->getCollection()->getRelativePath().'/'.$filter.'/img.php?id='.$file->getId();
             }
         }
 
@@ -132,7 +134,7 @@ class LocalProvider implements ProviderInterface
 
         $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
-        if (null === $fileTransformed) {
+//        if (null === $fileTransformed) {
             $imagine = $this->container->get('liip_imagine.binary.loader.default');
             $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
 
@@ -159,20 +161,22 @@ class LocalProvider implements ProviderInterface
 
             file_put_contents($transformedImagePath, $transformedImage);
 
-            $fileTransformed = new FileTransformed();
-            $fileTransformed
-                ->setFile($file)
-                ->setFilter($filter)
-                ->setSize((new \SplFileInfo($transformedImagePath))->getSize())
-            ;
+            if (null === $fileTransformed) {
+                $fileTransformed = new FileTransformed();
+                $fileTransformed
+                    ->setFile($file)
+                    ->setFilter($filter)
+                    ->setSize((new \SplFileInfo($transformedImagePath))->getSize())
+                ;
 
-            $this->em->persist($fileTransformed);
-            $this->em->flush($fileTransformed);
+                $this->em->persist($fileTransformed);
+                $this->em->flush($fileTransformed);
+            }
 
             return $transformedImage;
-        }
+//        }
 
-        return null;
+//        return null;
     }
     
     /**
