@@ -88,6 +88,7 @@ class LocalProvider implements ProviderInterface
             $filter = null;
         }
 
+        // @todo фильтр по умолчанию, если заданный не доступен.
         if ($filter === null) {
             try {
                 $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
