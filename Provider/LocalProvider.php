@@ -85,17 +85,16 @@ class LocalProvider implements ProviderInterface
         try {
             $this->container->get('liip_imagine.filter.configuration')->get($filter);
         } catch (\RuntimeException $e) {
-            $filter = null;
-        }
+            if ($filter !== 'orig') {
+                try {
+                    $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
 
-        // @todo фильтр по умолчанию, если заданный не доступен.
-        if ($filter === null) {
-            try {
-                $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
-
-                $filter = $default_filter;
-            } catch (\RuntimeException $e) {
-                // dummy
+                    $filter = $default_filter;
+                } catch (\RuntimeException $e) {
+                    $filter = null;
+                }
+            } else {
+                $filter = null;
             }
         }
 
@@ -104,16 +103,24 @@ class LocalProvider implements ProviderInterface
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
-            $ending .= '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
 
             if (null === $fileTransformed) {
-//                $ending .= '?id='.$file->getId();
+                //$ending .= '?id='.$file->getId();
 
-                return $this->request->getBasePath().$file->getStorage()->getRelativePath().$file->getCollection()->getRelativePath().'/'.$filter.'/img.php?id='.$file->getId();
+                return $this->request->getBasePath().
+                    $file->getStorage()->getRelativePath().
+                    $file->getCollection()->getRelativePath().
+                    '/'.$filter.'/img.php?id='.$file->getId()
+                ;
             }
         }
 
         $transformedImagePathInfo = pathinfo($this->request->getBasePath().$file->getFullRelativeUrl($filter));
+
+        if (empty($ending)) {
+            $ending = '.'.$transformedImagePathInfo['extension'];
+        }
 
         return $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
     }
