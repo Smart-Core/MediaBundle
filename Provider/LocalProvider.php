@@ -70,6 +70,10 @@ class LocalProvider implements ProviderInterface
      */
     public function get($id, $filter = null, $default_filter = '200_200')
     {
+        if (empty($filter)) {
+            $filter = null;
+        }
+
         if (null === $id) {
             return;
         }
