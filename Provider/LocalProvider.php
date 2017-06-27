@@ -4,6 +4,7 @@ namespace SmartCore\Bundle\MediaBundle\Provider;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
+use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
 use SmartCore\Bundle\MediaBundle\Service\GeneratorService;
@@ -68,55 +69,111 @@ class LocalProvider implements ProviderInterface
      *
      * @return string|null
      */
-    public function get($id, $filter = null, $default_filter = '200_200')
+    public function get($id, $filter = null, $default_filter = '200x200')
     {
         if (empty($filter)) {
             $filter = null;
         }
 
         if (null === $id) {
-            return;
+            return null;
         }
 
         /** @var File $file */
         $file = $this->filesRepo->find($id);
 
         if (null === $file) {
-            return;
+            return null;
         }
 
         try {
             $this->container->get('liip_imagine.filter.configuration')->get($filter);
         } catch (\RuntimeException $e) {
-            $filter = $default_filter;
+            if ($filter !== 'orig') {
+                try {
+                    $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
+
+                    $filter = $default_filter;
+                } catch (\RuntimeException $e) {
+                    $filter = null;
+                }
+            } else {
+                $filter = null;
+            }
         }
+
+        $ending = '';
 
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
+            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+
             if (null === $fileTransformed) {
-                $imagine = $this->container->get('liip_imagine.binary.loader.default');
-                $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
+                //$ending .= '?id='.$file->getId();
 
-                if ($file->isMimeType('image/jpeg') or $file->isMimeType('image/png') or $file->isMimeType('image/gif')) {
-                    // dummy
-                } else {
-                    echo 'Unsupported image format';
+                return $this->request->getBasePath().
+                    $file->getStorage()->getRelativePath().
+                    $file->getCollection()->getRelativePath().
+                    '/'.$filter.'/img.php?id='.$file->getId()
+                ;
+            }
+        }
 
-                    return;
-                }
+        $transformedImagePathInfo = pathinfo($this->request->getBasePath().$file->getFullRelativeUrl($filter));
 
-                $originalImage = $imagine->find($file->getFullRelativeUrl());
+        if (empty($ending)) {
+            $ending = '.'.$transformedImagePathInfo['extension'];
+        }
 
-                $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
-                if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
-                    throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
-                }
+        return $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
+    }
 
-                $transformedImagePath = $webDir.'/'.$file->getFilename();
+    /**
+     * @param int    $id
+     * @param string $filter
+     *
+     * @return null|mixed
+     */
+    public function generateTransformedFile(int $id, $filter)
+    {
+        /** @var File $file */
+        $file = $this->filesRepo->find($id);
 
-                file_put_contents($transformedImagePath, $imagineFilterManager->applyFilter($originalImage, $filter)->getContent());
+        if (null === $file) {
+            return null;
+        }
 
+        $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
+
+//        if (null === $fileTransformed) {
+            $imagine = $this->container->get('liip_imagine.binary.loader.default');
+            $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
+
+            if ($file->isMimeType('image/jpeg') or $file->isMimeType('image/png') or $file->isMimeType('image/gif')) {
+                // dummy
+            } else {
+                echo 'Unsupported image format';
+
+                return null;
+            }
+
+            $originalImage = $imagine->find($file->getFullRelativeUrl());
+
+            $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
+            if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
+                throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
+            }
+
+            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+
+            $transformedImagePathInfo = pathinfo($webDir.'/'.$file->getFilename());
+            $transformedImagePath = $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
+            $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter)->getContent();
+
+            file_put_contents($transformedImagePath, $transformedImage);
+
+            if (null === $fileTransformed) {
                 $fileTransformed = new FileTransformed();
                 $fileTransformed
                     ->setFile($file)
@@ -127,11 +184,13 @@ class LocalProvider implements ProviderInterface
                 $this->em->persist($fileTransformed);
                 $this->em->flush($fileTransformed);
             }
-        }
 
-        return $this->request->getBasePath().$file->getFullRelativeUrl($filter);
+            return $transformedImage;
+//        }
+
+//        return null;
     }
-
+    
     /**
      * @param File $file
      *
@@ -195,6 +254,30 @@ class LocalProvider implements ProviderInterface
         return true;
     }
 
+    /**
+     * @param Collection $collection
+     *
+     * @return bool
+     */
+    public function purgeTransformedFiles(Collection $collection)
+    {
+        foreach ($this->container->get('liip_imagine.filter.configuration')->all() as $filter_name => $filter) {
+            $dir = getcwd().'/web'.$collection->getDefaultStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
+
+            if (is_dir($dir)) {
+                foreach(new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST) as $path
+                ) {
+                    $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+                }
+
+                rmdir($dir);
+            }
+        }
+
+        return true;
+    }
+    
     /**
      * Получить список файлов.
      *

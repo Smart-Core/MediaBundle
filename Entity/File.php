@@ -3,15 +3,15 @@
 namespace SmartCore\Bundle\MediaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOS\UserBundle\Model\UserInterface;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="FileRepository")
  * @ORM\Table(name="media_files",
  *      indexes={
- *          @ORM\Index(columns={"type"})
+ *          @ORM\Index(columns={"size"}),
+ *          @ORM\Index(columns={"type"}),
  *      }
  * )
  */
@@ -19,6 +19,7 @@ class File
 {
     use ColumnTrait\Id;
     use ColumnTrait\CreatedAt;
+    use ColumnTrait\Description;
     use ColumnTrait\FosUser;
 
     /**
@@ -113,7 +114,9 @@ class File
     protected $uploadedFile;
 
     /**
-     * Constructor.
+     * File constructor.
+     *
+     * @param UploadedFile|null $uploadedFile
      */
     public function __construct(UploadedFile $uploadedFile = null)
     {
