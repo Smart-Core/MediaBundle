@@ -102,7 +102,8 @@ class LocalProvider implements ProviderInterface
             }
         }
 
-        $ending = '';
+        $basePath = $this->request ? $this->request->getBasePath() : '';
+        $ending   = '';
 
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
@@ -111,8 +112,7 @@ class LocalProvider implements ProviderInterface
 
             if (null === $fileTransformed) {
                 //$ending .= '?id='.$file->getId();
-
-                return $this->request->getBasePath().
+                return $basePath.
                     $file->getStorage()->getRelativePath().
                     $file->getCollection()->getRelativePath().
                     '/'.$filter.'/img.php?id='.$file->getId()
@@ -120,7 +120,7 @@ class LocalProvider implements ProviderInterface
             }
         }
 
-        $transformedImagePathInfo = pathinfo($this->request->getBasePath().$file->getFullRelativeUrl($filter));
+        $transformedImagePathInfo = pathinfo($basePath.$file->getFullRelativeUrl($filter));
 
         if (empty($ending)) {
             $ending = '.'.$transformedImagePathInfo['extension'];
