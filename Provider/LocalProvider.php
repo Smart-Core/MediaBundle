@@ -54,8 +54,8 @@ class LocalProvider implements ProviderInterface
     {
         $this->container            = $container;
         $this->em                   = $container->get('doctrine.orm.entity_manager');
-        $this->filesRepo            = $this->em->getRepository('SmartMediaBundle:File');
-        $this->filesTransformedRepo = $this->em->getRepository('SmartMediaBundle:FileTransformed');
+        $this->filesRepo            = $this->em->getRepository(File::class);
+        $this->filesTransformedRepo = $this->em->getRepository(FileTransformed::class);
         $this->generator            = $container->get('smart_media.generator');
         $this->request              = $container->get('request_stack')->getCurrentRequest();
     }

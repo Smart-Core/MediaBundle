@@ -2,6 +2,8 @@
 
 namespace SmartCore\Bundle\MediaBundle\Command;
 
+use SmartCore\Bundle\MediaBundle\Entity\Collection;
+use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +25,7 @@ class FiltersPurgeCommand extends ContainerAwareCommand
 
         $output->writeln('<comment>Truncate FileTransformed Table...</comment>');
 
-        $cmd = $em->getClassMetadata('SmartMediaBundle:FileTransformed');
+        $cmd = $em->getClassMetadata(FileTransformed::class);
         $connection = $em->getConnection();
         $dbPlatform = $connection->getDatabasePlatform();
         $connection->query('SET FOREIGN_KEY_CHECKS=0');
@@ -33,7 +35,7 @@ class FiltersPurgeCommand extends ContainerAwareCommand
 
         $output->writeln('<comment>Remove files...</comment>');
 
-        foreach ($em->getRepository('SmartMediaBundle:Collection')->findAll() as $collection) {
+        foreach ($em->getRepository(Collection::class)->findAll() as $collection) {
             $mc = $this->getContainer()->get('smart_media')->getCollection($collection->getId());
 
             $mc->purgeTransformedFiles();

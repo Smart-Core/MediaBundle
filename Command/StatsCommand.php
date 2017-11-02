@@ -2,6 +2,9 @@
 
 namespace SmartCore\Bundle\MediaBundle\Command;
 
+use SmartCore\Bundle\MediaBundle\Entity\Collection;
+use SmartCore\Bundle\MediaBundle\Entity\File;
+use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
@@ -37,9 +40,9 @@ class StatsCommand extends ContainerAwareCommand
 
         $totalSize = 0;
 
-        foreach ($em->getRepository('SmartMediaBundle:Collection')->findAll() as $collection) {
-            $size = round($em->getRepository('SmartMediaBundle:File')->summarySize($collection) / 1024 / 1024, 2);
-            $filtersSize = round($em->getRepository('SmartMediaBundle:FileTransformed')->summarySize($collection) / 1024 / 1024, 2);
+        foreach ($em->getRepository(Collection::class)->findAll() as $collection) {
+            $size = round($em->getRepository(File::class)->summarySize($collection) / 1024 / 1024, 2);
+            $filtersSize = round($em->getRepository(FileTransformed::class)->summarySize($collection) / 1024 / 1024, 2);
             $sum = $size + $filtersSize;
 
             $totalSize += $sum;
@@ -48,7 +51,7 @@ class StatsCommand extends ContainerAwareCommand
                 $collection->getId(),
                 $collection->getTitle(),
                 $collection->getDefaultStorage()->getTitle(),
-                $em->getRepository('SmartMediaBundle:File')->count($collection),
+                $em->getRepository(File::class)->count($collection),
                 $size.' MB',
                 $filtersSize.' MB',
                 '<comment>'.$sum.'</comment> MB',

@@ -61,7 +61,7 @@ class MediaCloudService
         }
 
         /** @var File $file */
-        $file = $this->em->getRepository('SmartMediaBundle:File')->find($id);
+        $file = $this->em->getRepository(File::class)->find($id);
 
         if (empty($file)) {
             return null;
@@ -83,7 +83,7 @@ class MediaCloudService
         }
 
         /** @var File $file */
-        $file = $this->em->getRepository('SmartMediaBundle:File')->find($id);
+        $file = $this->em->getRepository(File::class)->find($id);
 
         if (empty($file)) {
             return null;

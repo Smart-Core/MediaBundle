@@ -61,10 +61,10 @@ class CollectionService
     {
         $this->em               = $container->get('doctrine.orm.entity_manager');
         $this->generator        = $container->get('smart_media.generator');
-        $this->collectionsRepo  = $this->em->getRepository('SmartMediaBundle:Collection');
+        $this->collectionsRepo  = $this->em->getRepository(Collection::class);
         $this->collection       = $this->collectionsRepo->find($id);
-        $this->filesRepo        = $this->em->getRepository('SmartMediaBundle:File');
-        $this->filesTransformedRepo = $this->em->getRepository('SmartMediaBundle:FileTransformed');
+        $this->filesRepo        = $this->em->getRepository(File::class);
+        $this->filesTransformedRepo = $this->em->getRepository(FileTransformed::class);
 
         // @todo разные провайдеры.
         $this->provider = new LocalProvider($container);
