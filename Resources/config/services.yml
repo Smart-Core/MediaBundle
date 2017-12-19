@@ -7,6 +7,7 @@ services:
         arguments: [ "@service_container" ]
 
     smart_media.generator:
+        public: true
         class: SmartCore\Bundle\MediaBundle\Service\GeneratorService
 
     smart_media.twig.extension:
