@@ -51,7 +51,7 @@ class StatsCommand extends ContainerAwareCommand
                 $collection->getId(),
                 $collection->getTitle(),
                 $collection->getDefaultStorage()->getTitle(),
-                $em->getRepository(File::class)->count($collection),
+                $em->getRepository(File::class)->countByCollection($collection),
                 $size.' MB',
                 $filtersSize.' MB',
                 '<comment>'.$sum.'</comment> MB',

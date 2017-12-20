@@ -11,7 +11,7 @@ class FileTransformedRepository extends EntityRepository
      *
      * @return int
      */
-    public function count($collection)
+    public function countByCollection($collection)
     {
         $qb = $this->createQueryBuilder('e')
             ->select('count(e.id)')
