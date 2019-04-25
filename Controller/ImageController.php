@@ -3,6 +3,7 @@
 namespace SmartCore\Bundle\MediaBundle\Controller;
 
 use Smart\CoreBundle\Controller\Controller;
+use SmartCore\Bundle\MediaBundle\Entity\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,9 +21,18 @@ class ImageController extends Controller
      */
     public function renderAction(Request $request, $collection, $filter, $slug)
     {
+        /** @var \Doctrine\ORM\EntityManager $em */
+        $em = $this->get('doctrine.orm.entity_manager');
+
+        $file = $em->getRepository(File::class)->find($request->query->get('id', 0));
+
         $newImage = $this->get('smart_media')->generateTransformedFile($request->query->get('id', 0), $filter);
 
         $filter_configuration = $this->get('liip_imagine.filter.configuration')->get($filter);
+
+        if ($file and $file->isMimeType('png')) {
+            $filter_configuration['format'] = 'png';
+        }
 
         $response = new Response($newImage);
         $response->headers->set('Content-Type', 'image/'.$filter_configuration['format']);

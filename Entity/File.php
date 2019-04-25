@@ -116,9 +116,9 @@ class File
     /**
      * File constructor.
      *
-     * @param UploadedFile|null $uploadedFile
+     * @param \Symfony\Component\HttpFoundation\File\File|null $uploadedFile
      */
-    public function __construct(UploadedFile $uploadedFile = null)
+    public function __construct(\Symfony\Component\HttpFoundation\File\File $uploadedFile = null)
     {
         $this->created_at     = new \DateTime();
         $this->is_preuploaded = true;

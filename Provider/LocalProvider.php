@@ -86,6 +86,10 @@ class LocalProvider implements ProviderInterface
             return null;
         }
 
+        if ($file and $file->isMimeType('png')) {
+            $runtimeConfig['format'] = 'png';
+        }
+
         try {
             $this->container->get('liip_imagine.filter.configuration')->get($filter);
         } catch (\RuntimeException $e) {
@@ -108,7 +112,11 @@ class LocalProvider implements ProviderInterface
         if ($filter) {
             $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
-            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+            if (isset($runtimeConfig['format'])) {
+                $ending = '.'.$runtimeConfig['format'];
+            } else {
+                $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+            }
 
             if (null === $fileTransformed) {
                 //$ending .= '?id='.$file->getId();
@@ -144,6 +152,12 @@ class LocalProvider implements ProviderInterface
             return null;
         }
 
+        $runtimeConfig = [];
+
+        if ($file and $file->isMimeType('png')) {
+            $runtimeConfig['format'] = 'png';
+        }
+
         $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
 
 //        if (null === $fileTransformed) {
@@ -160,16 +174,25 @@ class LocalProvider implements ProviderInterface
 
             $originalImage = $imagine->find($file->getFullRelativeUrl());
 
-            $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
+            if (empty($this->request)) {
+                $webDir = $this->container->getParameter('kernel.project_dir').'/web'.$this->generator->generateRelativePath($file, $filter);
+            } else {
+                $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
+            }
+
             if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
                 throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
             }
 
-            $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+            if (isset($runtimeConfig['format'])) {
+                $ending = '.'.$runtimeConfig['format'];
+            } else {
+                $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+            }
 
             $transformedImagePathInfo = pathinfo($webDir.'/'.$file->getFilename());
             $transformedImagePath = $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
-            $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter)->getContent();
+            $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter, $runtimeConfig)->getContent();
 
             file_put_contents($transformedImagePath, $transformedImage);
 
@@ -200,7 +223,11 @@ class LocalProvider implements ProviderInterface
      */
     public function upload(File $file)
     {
-        $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$file->getFullRelativePath();
+        if (empty($this->request)) {
+            $webDir = $this->container->getParameter('kernel.project_dir').'/web'.$file->getFullRelativePath();
+        } else {
+            $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$file->getFullRelativePath();
+        }
 
         if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
             throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
@@ -237,7 +264,11 @@ class LocalProvider implements ProviderInterface
 
         /** @var FileTransformed $fileTransformed */
         foreach ($filesTransformed as $fileTransformed) {
-            $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFullRelativeUrl();
+            if (empty($this->request)) {
+                $fullPath = $this->container->getParameter('kernel.project_dir').'/web'.$fileTransformed->getFullRelativeUrl();
+            } else {
+                $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFullRelativeUrl();
+            }
 
             if (file_exists($fullPath)) {
                 @unlink($fullPath);
@@ -246,7 +277,11 @@ class LocalProvider implements ProviderInterface
 
         // Удаление оригинала.
         if (!empty($fileTransformed) and $fileTransformed instanceof FileTransformed) {
-            $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFile()->getFullRelativeUrl();
+            if (empty($this->request)) {
+                $fullPath = $this->container->getParameter('kernel.project_dir').'/web'.$fileTransformed->getFile()->getFullRelativeUrl();
+            } else {
+                $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFile()->getFullRelativeUrl();
+            }
 
             return @unlink($fullPath);
         }
