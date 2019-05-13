@@ -3,8 +3,9 @@
 namespace SmartCore\Bundle\MediaBundle\Twig;
 
 use SmartCore\Bundle\MediaBundle\Service\MediaCloudService;
+use Twig\Extension\AbstractExtension;
 
-class MediaExtension extends \Twig_Extension
+class MediaExtension extends AbstractExtension
 {
     /**
      * @var MediaCloudService
