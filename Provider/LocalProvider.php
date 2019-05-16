@@ -19,7 +19,7 @@ class LocalProvider implements ProviderInterface
     /**
      * @var string
      */
-    //protected $sourceRoot = '%kernel.root_dir%/usr/media_cloud';
+    //protected $sourceRoot = '%kernel.project_dir%/usr/media_cloud';
 
     /**
      * @var EntityManager
