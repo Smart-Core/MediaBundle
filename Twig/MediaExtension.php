@@ -4,6 +4,7 @@ namespace SmartCore\Bundle\MediaBundle\Twig;
 
 use SmartCore\Bundle\MediaBundle\Service\MediaCloudService;
 use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 class MediaExtension extends AbstractExtension
 {
@@ -28,8 +29,8 @@ class MediaExtension extends AbstractExtension
     public function getFunctions()
     {
         return [
-            new \Twig_SimpleFunction('smart_media',     [$this, 'generateFileUrl']),
-            new \Twig_SimpleFunction('smart_media_img', [$this, 'renderImgTag']),
+            new TwigFunction('smart_media',     [$this, 'generateFileUrl'], ['is_safe' => ['html']]),
+            new TwigFunction('smart_media_img', [$this, 'renderImgTag'], ['is_safe' => ['html']]),
         ];
     }
 
