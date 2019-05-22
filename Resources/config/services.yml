@@ -4,7 +4,8 @@ parameters:
 services:
     smart_media:
         class: SmartCore\Bundle\MediaBundle\Service\MediaCloudService
-        arguments: [ "@service_container" ]
+        arguments: [ '@service_container' ]
+        public: true
 
     smart_media.generator:
         public: true
@@ -12,6 +13,6 @@ services:
 
     smart_media.twig.extension:
         class: SmartCore\Bundle\MediaBundle\Twig\MediaExtension
-        arguments: [ "@smart_media" ]
+        arguments: [ '@smart_media' ]
         tags:
             - { name: twig.extension }
