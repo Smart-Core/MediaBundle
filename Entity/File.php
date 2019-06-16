@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  *      indexes={
  *          @ORM\Index(columns={"size"}),
  *          @ORM\Index(columns={"type"}),
+ *          @ORM\Index(columns={"user_id"}),
  *      }
  * )
  */
@@ -20,7 +21,6 @@ class File
     use ColumnTrait\Id;
     use ColumnTrait\CreatedAt;
     use ColumnTrait\Description;
-    use ColumnTrait\FosUser;
 
     /**
      * @var bool
@@ -28,6 +28,13 @@ class File
      * @ORM\Column(type="boolean")
      */
     protected $is_preuploaded;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(type="string", length=32, nullable=false)
+     */
+    protected $userId;
 
     /**
      * @var Collection
@@ -416,5 +423,25 @@ class File
         }
 
         return false;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUserId(): string
+    {
+        return $this->userId;
+    }
+
+    /**
+     * @param string $userId
+     *
+     * @return $this
+     */
+    public function setUserId($userId): self
+    {
+        $this->userId = $userId;
+
+        return $this;
     }
 }
