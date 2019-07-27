@@ -2,7 +2,7 @@
 
 namespace SmartCore\Bundle\MediaBundle;
 
-use SmartCore\Bundle\MediaBundle\Service\CollectionService;
+use SmartCore\Bundle\MediaBundle\Service\MediaCollection;
 use SmartCore\Bundle\MediaBundle\Service\MediaCloudService;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -12,7 +12,7 @@ class SmartMediaBundleUseCases
     {
         $container = 'container';
 
-        $collection = new CollectionService($container);
+        $collection = new MediaCollection($container);
         $cloud = new MediaCloudService($container);
 
         $file = new UploadedFile('/path/to/file', 'filename');

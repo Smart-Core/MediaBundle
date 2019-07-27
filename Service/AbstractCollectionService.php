@@ -1,30 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SmartCore\Bundle\MediaBundle\Service;
 
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Category;
-use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
-use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
-use SmartCore\Bundle\MediaBundle\Provider\LocalProvider;
 use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-class CollectionService
+abstract class AbstractCollectionService
 {
-    use ContainerAwareTrait;
-
     /**
-     * @var Collection
-     */
-    protected $collection;
-
-    /**
-     * @var EntityManager
+     * @var EntityManagerInterface
      */
     protected $em;
 
@@ -34,40 +23,51 @@ class CollectionService
     protected $generator;
 
     /**
-     * @var EntityRepository
-     */
-    protected $collectionsRepo;
-
-    /**
-     * @var EntityRepository
-     */
-    protected $filesRepo;
-
-    /**
-     * @var EntityRepository
-     */
-    protected $filesTransformedRepo;
-
-    /**
      * @var ProviderInterface
      */
     protected $provider;
 
     /**
-     * @param ContainerInterface $container
-     * @param int $id
+     * AbstractCollectionService constructor.
+     *
+     * @param EntityManagerInterface $em
      */
-    public function __construct(ContainerInterface $container, $id)
+    public function __construct(EntityManagerInterface $em)
     {
-        $this->em               = $container->get('doctrine.orm.entity_manager');
-        $this->generator        = $container->get('smart_media.generator');
-        $this->collectionsRepo  = $this->em->getRepository(Collection::class);
-        $this->collection       = $this->collectionsRepo->find($id);
-        $this->filesRepo        = $this->em->getRepository(File::class);
-        $this->filesTransformedRepo = $this->em->getRepository(FileTransformed::class);
+        $this->em = $em;
+        $this->generator = new GeneratorService();
+    }
 
-        // @todo разные провайдеры.
-        $this->provider = new LocalProvider($container);
+    /**
+     * @param ProviderInterface $provider
+     *
+     * @return $this
+     */
+    public function setProvider(ProviderInterface $provider): self
+    {
+        $this->provider = $provider;
+
+        return $this;
+    }
+
+    /**
+     * @return EntityManagerInterface
+     */
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->em;
+    }
+
+    /**
+     * @param EntityManagerInterface $em
+     *
+     * @return $this
+     */
+    public function setEntityManager(EntityManagerInterface $em): self
+    {
+        $this->em = $em;
+
+        return $this;
     }
 
     /**
@@ -92,7 +92,8 @@ class CollectionService
      */
     public function upload(\Symfony\Component\HttpFoundation\File\File $uploadedFile, $category = null, array $tags = null)
     {
-        // @todo проверку на доступность загруженного файла, могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
+        // @todo проверку на доступность загруженного файла
+        // могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
         $file = new File($uploadedFile);
         $file
             ->setCollection($this->collection)
@@ -103,7 +104,7 @@ class CollectionService
         $newFile = $this->provider->upload($file);
 
         $this->em->persist($file);
-        $this->em->flush($file);
+        $this->em->flush();
 
         return $file->getId();
     }
@@ -121,7 +122,7 @@ class CollectionService
 
         $this->provider->remove($id);
 
-        $file = $this->filesRepo->find($id);
+        $file = $this->em->find(File::class, $id);
 
         if (!empty($file)) {
             $this->em->remove($file);
@@ -129,21 +130,6 @@ class CollectionService
         }
 
         return true;
-    }
-
-    /**
-     * Получить список файлов.
-     *
-     * @param int|null $categoryId
-     * @param array|null $orderBy
-     * @param int|null $limit
-     * @param int|null $offset
-     *
-     * @return File[]|null
-     */
-    public function findBy($categoryId = null, array $orderBy = null, $limit = null, $offset = null)
-    {
-        // @todo
     }
 
     /**
@@ -163,5 +149,20 @@ class CollectionService
     public function purgeTransformedFiles()
     {
         return $this->provider->purgeTransformedFiles($this->collection);
+    }
+
+    /**
+     * Получить список файлов.
+     *
+     * @param int|null $categoryId
+     * @param array|null $orderBy
+     * @param int|null $limit
+     * @param int|null $offset
+     *
+     * @return File[]|null
+     */
+    public function findBy($categoryId = null, array $orderBy = null, $limit = null, $offset = null)
+    {
+        // @todo
     }
 }

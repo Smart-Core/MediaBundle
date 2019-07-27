@@ -18,16 +18,47 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder('smart_media');
-        // Keep compatibility with symfony/config < 4.2
-        if (method_exists($treeBuilder, 'getRootNode')) {
-            $rootNode = $treeBuilder->getRootNode();
-        } else {
-            $rootNode = $treeBuilder->root('smart_media');
-        }
+        $rootNode = $treeBuilder->getRootNode();
 
-        // Here you should define the parameters that are allowed to
-        // configure your bundle. See the documentation linked above for
-        // more information on that topic.
+        $rootNode
+            ->children()
+                ->scalarNode('default_storage')->defaultNull()->end()
+                ->scalarNode('default_filter')->defaultNull()->end()
+                ->scalarNode('file_relative_path_pattern')->defaultValue('/{year}/{month}/{day}')->end()
+                ->scalarNode('filename_pattern')->defaultValue('{hour}_{minutes}_{rand(10)}')->end()
+                ->arrayNode('storages')
+                    ->canBeUnset()
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('code')->end()
+                            ->scalarNode('provider')->end()
+                            ->scalarNode('title')->defaultNull()->end()
+                            ->scalarNode('relative_path')->defaultValue('')->end()
+                            ->arrayNode('arguments')
+                                ->canBeUnset()
+                                ->prototype('scalar')
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('collections')
+                    ->canBeUnset()
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('code')->end()
+                            ->scalarNode('title')->end()
+                            ->scalarNode('relative_path')->defaultValue('')->end()
+
+                            ->scalarNode('storage')->defaultNull()->end()
+                            ->scalarNode('default_filter')->defaultNull()->end()
+                            ->scalarNode('file_relative_path_pattern')->defaultNull()->end()
+                            ->scalarNode('filename_pattern')->defaultNull()->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
         return $treeBuilder;
     }
 }

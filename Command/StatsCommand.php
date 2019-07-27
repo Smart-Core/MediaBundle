@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
+use SmartCore\Bundle\MediaBundle\Service\MediaCloudService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
@@ -18,16 +19,20 @@ class StatsCommand extends Command
 
     protected $em;
 
+    /** @var MediaCloudService */
+    protected $mc;
+
     /**
      * StatsCommand constructor.
      *
      * @param EntityManagerInterface $em
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(MediaCloudService $mc)
     {
         parent::__construct();
 
-        $this->em = $em;
+        $this->em = $mc->getEntityManager();
+        $this->mc = $mc;
     }
 
     protected function configure()
@@ -39,6 +44,7 @@ class StatsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+//        dump($this->mc->getCollectionsList());
         $em = $this->em;
 
         $style = new TableStyle();
@@ -51,24 +57,25 @@ class StatsCommand extends Command
 
         $table = new Table($output);
         $table
-            ->setHeaders(['id', 'Collection', 'Default storage', 'Files', 'Original size', 'Filters size', 'Summary size'])
+            ->setHeaders(['Code', 'Collection', 'Storage', 'Files', 'Original size', 'Filters size', 'Summary size'])
             ->setStyle($style)
         ;
 
         $totalSize = 0;
 
-        foreach ($em->getRepository(Collection::class)->findAll() as $collection) {
-            $size = round($em->getRepository(File::class)->summarySize($collection) / 1024 / 1024, 2);
-            $filtersSize = round($em->getRepository(FileTransformed::class)->summarySize($collection) / 1024 / 1024, 2);
+        foreach ($this->mc->getCollections() as $collection) {
+            $size = round($em->getRepository(File::class)->summarySize($collection->getCode()) / 1024 / 1024, 2);
+            //$filtersSize = round($em->getRepository(FileTransformed::class)->summarySize($collection) / 1024 / 1024, 2);
+            $filtersSize = 0;
             $sum = $size + $filtersSize;
 
             $totalSize += $sum;
 
             $table->addRow([
-                $collection->getId(),
+                $collection->getCode(),
                 $collection->getTitle(),
-                $collection->getDefaultStorage()->getTitle(),
-                $em->getRepository(File::class)->countByCollection($collection),
+                $collection->getStorage()->getTitle(),
+                $em->getRepository(File::class)->countByCollection($collection->getCode()),
                 $size.' MB',
                 $filtersSize.' MB',
                 '<comment>'.$sum.'</comment> MB',

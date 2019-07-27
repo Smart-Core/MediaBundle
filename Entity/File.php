@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * @ORM\Entity(repositoryClass="FileRepository")
  * @ORM\Table(name="media_files",
  *      indexes={
+ *          @ORM\Index(columns={"collection"}),
+ *          @ORM\Index(columns={"storage"}),
  *          @ORM\Index(columns={"size"}),
  *          @ORM\Index(columns={"type"}),
  *          @ORM\Index(columns={"user_id"}),
@@ -25,13 +27,6 @@ class File
     use ColumnTrait\Description;
 
     /**
-     * @var bool
-     *
-     * @ORM\Column(type="boolean")
-     */
-    protected $is_preuploaded;
-
-    /**
      * @var string
      *
      * @ORM\Column(type="string", length=32, nullable=false)
@@ -39,10 +34,9 @@ class File
     protected $userId;
 
     /**
-     * @var Collection
+     * @var string
      *
-     * @ORM\ManyToOne(targetEntity="Collection", inversedBy="files")
-     * @ORM\JoinColumn(nullable=true)
+     * @ORM\Column(type="string", length=2)
      */
     protected $collection;
 
@@ -54,10 +48,9 @@ class File
     protected $category;
 
     /**
-     * @var Storage
+     * @var string
      *
-     * @ORM\ManyToOne(targetEntity="Storage", inversedBy="files")
-     * @ORM\JoinColumn(nullable=true)
+     * @ORM\Column(type="string", length=2)
      */
     protected $storage;
 
@@ -129,9 +122,8 @@ class File
      */
     public function __construct(\Symfony\Component\HttpFoundation\File\File $uploadedFile = null)
     {
-        $this->created_at     = new \DateTime();
-        $this->is_preuploaded = true;
-        $this->storage        = null;
+        $this->created_at   = new \DateTime();
+        $this->storage      = null;
 
         if ($uploadedFile) {
             $this->uploadedFile = $uploadedFile;
@@ -177,26 +169,6 @@ class File
     }
 
     /**
-     * @param bool $is_preuploaded
-     *
-     * @return $this
-     */
-    public function setIsPreuploaded($is_preuploaded)
-    {
-        $this->is_preuploaded = $is_preuploaded;
-
-        return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function getIsPreuploaded()
-    {
-        return $this->is_preuploaded;
-    }
-
-    /**
      * @return UploadedFile
      */
     public function getUploadedFile()
@@ -225,27 +197,6 @@ class File
     }
 
     /**
-     * @param Collection $collection
-     *
-     * @return $this
-     */
-    public function setCollection(Collection $collection)
-    {
-        $this->collection = $collection;
-        $this->storage = $collection->getDefaultStorage();
-
-        return $this;
-    }
-
-    /**
-     * @return Collection
-     */
-    public function getCollection()
-    {
-        return $this->collection;
-    }
-
-    /**
      * @return FileTransformed[]|
      */
     public function getFilesTransformed()
@@ -254,23 +205,43 @@ class File
     }
 
     /**
-     * @param Storage $storage
+     * @return string
+     */
+    public function getCollection(): string
+    {
+        return $this->collection;
+    }
+
+    /**
+     * @param string $collection
      *
      * @return $this
      */
-    public function setStorage(Storage $storage)
+    public function setCollection(string $collection): self
     {
-        $this->storage = $storage;
+        $this->collection = $collection;
 
         return $this;
     }
 
     /**
-     * @return Storage
+     * @return string
      */
-    public function getStorage()
+    public function getStorage(): string
     {
         return $this->storage;
+    }
+
+    /**
+     * @param string $storage
+     *
+     * @return $this
+     */
+    public function setStorage(string $storage): self
+    {
+        $this->storage = $storage;
+
+        return $this;
     }
 
     /**

@@ -4,7 +4,7 @@ parameters:
 services:
     smart_media:
         class: SmartCore\Bundle\MediaBundle\Service\MediaCloudService
-        arguments: [ '@service_container' ]
+        arguments: [ '@service_container', '@doctrine.orm.entity_manager', "%smart_media.config%" ]
         public: true
 
     smart_media.generator:
@@ -19,7 +19,7 @@ services:
 
     smart_media.stats_command:
         class: SmartCore\Bundle\MediaBundle\Command\StatsCommand
-        arguments: ['@doctrine.orm.entity_manager']
+        arguments: ['@smart_media']
         tags:
             - { name: console.command, command: 'smart:media:stats' }
 

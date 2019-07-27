@@ -5,16 +5,27 @@ namespace SmartCore\Bundle\MediaBundle\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity
  * @ORM\Table(name="media_collections")
+ * @UniqueEntity(fields={"code"}, message="Code must be unique")
  */
 class Collection
 {
     use ColumnTrait\Id;
     use ColumnTrait\CreatedAt;
     use ColumnTrait\TitleNotBlank;
+
+    /**
+     * Уникальный код коллекции
+     *
+     * @var string
+     *
+     * @ORM\Column(type="string", length=2, nullable=false, unique=true)
+     */
+    protected $code;
 
     /**
      * @var string
@@ -27,6 +38,8 @@ class Collection
      * @var array
      *
      * @ORM\Column(type="array")
+     *
+     * @deprecated
      */
     protected $params;
 
@@ -36,7 +49,7 @@ class Collection
      * @ORM\ManyToOne(targetEntity="Storage", cascade={"persist"})
      * @ORM\JoinColumn(nullable=false)
      */
-    protected $default_storage;
+    protected $storage;
 
     /**
      * Относительный путь можно менять, только если нету файлов в коллекции
@@ -94,23 +107,23 @@ class Collection
     }
 
     /**
-     * @param Storage $default_storage
-     *
-     * @return $this
+     * @return Storage
      */
-    public function setDefaultStorage(Storage $default_storage)
+    public function getStorage(): Storage
     {
-        $this->default_storage = $default_storage;
-
-        return $this;
+        return $this->storage;
     }
 
     /**
-     * @return Storage
+     * @param Storage $storage
+     *
+     * @return $this
      */
-    public function getDefaultStorage()
+    public function setStorage(Storage $storage): self
     {
-        return $this->default_storage;
+        $this->storage = $storage;
+
+        return $this;
     }
 
     /**
@@ -231,5 +244,25 @@ class Collection
     public function getRelativePath()
     {
         return $this->relative_path;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCode(): string
+    {
+        return $this->code;
+    }
+
+    /**
+     * @param string $code
+     *
+     * @return $this
+     */
+    public function setCode(string $code): self
+    {
+        $this->code = $code;
+
+        return $this;
     }
 }

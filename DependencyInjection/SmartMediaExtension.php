@@ -24,5 +24,9 @@ class SmartMediaExtension extends Extension
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
+
+        // @todo првоерка на наличие default_filter в liip imagine
+
+        $container->setParameter('smart_media.config', $config);
     }
 }

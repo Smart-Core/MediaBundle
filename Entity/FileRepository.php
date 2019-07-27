@@ -7,11 +7,11 @@ use Doctrine\ORM\EntityRepository;
 class FileRepository extends EntityRepository
 {
     /**
-     * @param Collection|int $collection
+     * @param string $collection
      *
      * @return int
      */
-    public function countByCollection($collection)
+    public function countByCollection(string $collection)
     {
         $qb = $this->createQueryBuilder('e')
             ->select('count(e.id)')
@@ -23,11 +23,11 @@ class FileRepository extends EntityRepository
     }
 
     /**
-     * @param Collection|int $collection
+     * @param string $collection
      *
      * @return int
      */
-    public function summarySize($collection)
+    public function summarySize(string $collection)
     {
         $qb = $this->createQueryBuilder('e')
             ->select('sum(e.size)')

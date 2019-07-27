@@ -3,7 +3,10 @@
 namespace SmartCore\Bundle\MediaBundle\Service;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
+use SmartCore\Bundle\MediaBundle\Entity\Storage;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -11,37 +14,121 @@ class MediaCloudService
 {
     use ContainerAwareTrait;
 
+    protected $config;
+
     /**
      * @var EntityManager
      */
     protected $em;
 
     /**
-     * @var CollectionService[]
+     * @var MediaCollection[]
      */
     protected $collections;
 
     /**
-     * @param ContainerInterface $container
+     * @var MediaStorage[]
      */
-    public function __construct(ContainerInterface $container)
+    protected $storages;
+
+    /**
+     * MediaCloudService constructor.
+     *
+     * @param ContainerInterface     $container
+     * @param EntityManagerInterface $em
+     * @param array                  $config
+     */
+    public function __construct(ContainerInterface $container, EntityManagerInterface $em, array $config)
     {
+        $this->config = $config;
+
+        // storages
+        foreach ($config['storages'] as $name => $val) {
+            $s = new MediaStorage();
+            $s->setCode($val['code'])
+                ->setTitle($val['title'])
+                ->setRelativePath($val['relative_path'])
+                ->setProvider($val['provider'])
+                ->setArguments($val['arguments'])
+            ;
+
+            $this->storages[$val['code']] = $s;
+        }
+
+        $dbStorages = $em->getRepository(Storage::class)->findAll();
+        foreach ($dbStorages as $dbStorage) {
+            if (isset($this->storages[$dbStorage->getCode()])) {
+                throw new \Exception('Storage with code "'.$dbStorage->getCode().'" is already exist');
+            }
+
+            $s = new MediaStorage();
+            $s->setCode($dbStorage->getCode())
+                ->setTitle($dbStorage->getTitle())
+                ->setRelativePath($dbStorage->getRelativePath())
+                ->setProvider($dbStorage->getProvider())
+                ->setArguments($dbStorage->getArguments())
+            ;
+
+            $this->storages[$dbStorage->getCode()] = $s;
+        }
+
+        // collections
+        foreach ($config['collections'] as $name => $val) {
+            $c = new MediaCollection();
+            $c->setCode($val['code'])
+                ->setTitle($val['title'])
+                ->setRelativePath($val['relative_path'])
+                ->setFilenamePattern($val['filename_pattern'])
+                ->setFileRelativePathPattern($val['file_relative_path_pattern'])
+                ->setStorage($this->storages[$val['storage']])
+            ;
+
+            $this->collections[$val['code']] = $c;
+        }
+
+        $dbCollections = $em->getRepository(Collection::class)->findAll();
+        foreach ($dbCollections as $dbCollection) {
+            if (isset($this->collections[$dbCollection->getCode()])) {
+                throw new \Exception('Collection with code "'.$dbCollection->getCode().'" is already exist');
+            }
+
+            $c = new MediaCollection();
+            $c->setCode($dbCollection->getCode())
+                ->setTitle($dbCollection->getTitle())
+                ->setRelativePath($dbCollection->getRelativePath())
+                ->setFilenamePattern($dbCollection->getFilenamePattern())
+                ->setFileRelativePathPattern($dbCollection->getFileRelativePathPattern())
+                ->setStorage($this->storages[$dbCollection->getStorage()->getCode()])
+            ;
+
+            $this->collections[$dbCollection->getCode()] = $c;
+        }
+
+//        dump($this->storages);
+//        dump($this->collections);
+
         $this->container = $container;
-        $this->em        = $container->get('doctrine.orm.entity_manager');
+        $this->em        = $em;
     }
 
     /**
-     * @param int $id
-     *
-     * @return CollectionService
+     * @return EntityManager
      */
-    public function getCollection($id)
+    public function getEntityManager(): EntityManager
     {
-        if (!isset($this->collections[$id])) {
-            $this->collections[$id] = new CollectionService($this->container, $id);
-        }
+        return $this->em;
+    }
 
-        return $this->collections[$id];
+    /**
+     * @param int|null $id
+     *
+     * @return MediaCollection
+     *
+     * @todo если не задан id, и коллекций больше 1, то выкидывать исключение.
+     */
+    public function getCollection($code = null)
+    {
+        return $this->collections[$code];
     }
 
     /**
@@ -102,9 +189,12 @@ class MediaCloudService
         // @todo
     }
 
-    public function getCollectionsList()
+    /**
+     * @return MediaCollection[]|array
+     */
+    public function getCollections(): array
     {
-        // @todo
+        return $this->collections;
     }
 
     public function getStoragesList()

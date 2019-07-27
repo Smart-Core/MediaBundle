@@ -50,7 +50,7 @@ class LocalProvider implements ProviderInterface
      * @param EntityRepository $filesRepo
      * @param ContainerInterface $container
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, $source_dir)
     {
         $this->container            = $container;
         $this->em                   = $container->get('doctrine.orm.entity_manager');
@@ -237,7 +237,7 @@ class LocalProvider implements ProviderInterface
 
         // @todo настройка качества сжатия и условное уменьшение т.е. если картинка больше заданных размеров.
         // @todo возможность использовать Imagick, если доступен.
-        // @todo поддерку PNG
+        // @todo поддержку PNG
         if (strpos($newFile->getMimeType(), 'jpeg') !== false) {
             $img = imagecreatefromjpeg($newFile->getPathname());
             imagejpeg($img, $newFile->getPathname(), 90);
@@ -297,7 +297,7 @@ class LocalProvider implements ProviderInterface
     public function purgeTransformedFiles(Collection $collection)
     {
         foreach ($this->container->get('liip_imagine.filter.configuration')->all() as $filter_name => $filter) {
-            $dir = getcwd().'/public'.$collection->getDefaultStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
+            $dir = getcwd().'/public'.$collection->getStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
 
             if (is_dir($dir)) {
                 foreach(new \RecursiveIteratorIterator(

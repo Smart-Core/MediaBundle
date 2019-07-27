@@ -6,10 +6,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Smart\CoreBundle\Doctrine\ColumnTrait;
 use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity()
  * @ORM\Table(name="media_storages")
+ * @UniqueEntity(fields={"code"}, message="Code must be unique")
  */
 class Storage
 {
@@ -18,11 +20,13 @@ class Storage
     use ColumnTrait\Title;
 
     /**
-     * @var string instanceof ProviderInterface
+     * Уникальный код хранилища
      *
-     * @ORM\Column(type="string", length=255)
+     * @var string
+     *
+     * @ORM\Column(type="string", length=2, nullable=false, unique=true)
      */
-    protected $provider;
+    protected $code;
 
     /**
      * @var string
@@ -32,11 +36,18 @@ class Storage
     protected $relative_path;
 
     /**
+     * @var string instanceof ProviderInterface
+     *
+     * @ORM\Column(type="string", length=255, nullable=false)
+     */
+    protected $provider;
+
+    /**
      * @var array
      *
      * @ORM\Column(type="array")
      */
-    protected $params;
+    protected $arguments;
 
     /**
      * @var File[]|ArrayCollection
@@ -86,23 +97,43 @@ class Storage
     }
 
     /**
-     * @param array|null $params
+     * @return array
+     */
+    public function getArguments(): ?array
+    {
+        return $this->arguments;
+    }
+
+    /**
+     * @param array $arguments
      *
      * @return $this
      */
-    public function setParams(array $params = null)
+    public function setArguments(array $arguments): self
     {
-        $this->params = $params;
+        $this->arguments = $arguments;
 
         return $this;
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getParams()
+    public function getCode(): string
     {
-        return $this->params;
+        return $this->code;
+    }
+
+    /**
+     * @param string $code
+     *
+     * @return $this
+     */
+    public function setCode(string $code): self
+    {
+        $this->code = $code;
+
+        return $this;
     }
 
     /**
