@@ -42,7 +42,7 @@ class File
      * @var Collection
      *
      * @ORM\ManyToOne(targetEntity="Collection", inversedBy="files")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      */
     protected $collection;
 
@@ -57,7 +57,7 @@ class File
      * @var Storage
      *
      * @ORM\ManyToOne(targetEntity="Storage", inversedBy="files")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      */
     protected $storage;
 
