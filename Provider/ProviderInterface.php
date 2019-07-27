@@ -19,7 +19,7 @@ interface ProviderInterface
     /**
      * @param File $file
      */
-    public function upload(File $file);
+    public function upload(File $file, $relative_path);
 
     /**
      * @param int $id

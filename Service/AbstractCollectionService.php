@@ -80,33 +80,7 @@ abstract class AbstractCollectionService
      */
     public function get($id, $filter = null)
     {
-        return $this->provider->get($id, $filter, $this->collection->getDefaultFilter());
-    }
-
-    /**
-     * @param UploadedFile $file
-     * @param Category|int $category
-     * @param array $tags
-     *
-     * @return int - ID файла в коллекции.
-     */
-    public function upload(\Symfony\Component\HttpFoundation\File\File $uploadedFile, $category = null, array $tags = null)
-    {
-        // @todo проверку на доступность загруженного файла
-        // могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
-        $file = new File($uploadedFile);
-        $file
-            ->setCollection($this->collection)
-            ->setFilename($this->generator->generateFileName($file))
-            ->setRelativePath($this->generator->generateFilePath($file))
-        ;
-
-        $newFile = $this->provider->upload($file);
-
-        $this->em->persist($file);
-        $this->em->flush();
-
-        return $file->getId();
+        return $this->provider->get($id, $filter, $this->getDefaultFilter());
     }
 
     /**
@@ -120,13 +94,13 @@ abstract class AbstractCollectionService
             return;
         }
 
-        $this->provider->remove($id);
+        $this->storage->getProvider()->remove($id);
 
         $file = $this->em->find(File::class, $id);
 
         if (!empty($file)) {
             $this->em->remove($file);
-            $this->em->flush($file);
+            $this->em->flush();
         }
 
         return true;
@@ -140,7 +114,7 @@ abstract class AbstractCollectionService
      */
     public function generateTransformedFile(int $id, $filter)
     {
-        return $this->provider->generateTransformedFile($id, $filter);
+        return $this->storage->getProvider()->generateTransformedFile($id, $filter);
     }
 
     /**
@@ -148,7 +122,7 @@ abstract class AbstractCollectionService
      */
     public function purgeTransformedFiles()
     {
-        return $this->provider->purgeTransformedFiles($this->collection);
+        return $this->storage->getProvider()->purgeTransformedFiles($this->collection);
     }
 
     /**

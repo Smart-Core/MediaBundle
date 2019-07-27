@@ -3,7 +3,6 @@
 namespace SmartCore\Bundle\MediaBundle\Provider;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityRepository;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
@@ -11,6 +10,7 @@ use SmartCore\Bundle\MediaBundle\Service\GeneratorService;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class LocalProvider implements ProviderInterface
 {
@@ -19,22 +19,12 @@ class LocalProvider implements ProviderInterface
     /**
      * @var string
      */
-    //protected $sourceRoot = '%kernel.project_dir%/usr/media_cloud';
+    protected $source_dir;
 
     /**
      * @var EntityManager
      */
     protected $em;
-
-    /**
-     * @var EntityRepository
-     */
-    protected $filesRepo;
-
-    /**
-     * @var EntityRepository
-     */
-    protected $filesTransformedRepo;
 
     /**
      * @var GeneratorService
@@ -47,17 +37,19 @@ class LocalProvider implements ProviderInterface
     protected $request;
 
     /**
-     * @param EntityRepository $filesRepo
+     * LocalProvider constructor.
+     *
      * @param ContainerInterface $container
+     * @param array              $arguments
      */
-    public function __construct(ContainerInterface $container, $source_dir)
+    public function __construct(ContainerInterface $container, array $arguments = [])
     {
-        $this->container            = $container;
-        $this->em                   = $container->get('doctrine.orm.entity_manager');
-        $this->filesRepo            = $this->em->getRepository(File::class);
-        $this->filesTransformedRepo = $this->em->getRepository(FileTransformed::class);
-        $this->generator            = $container->get('smart_media.generator');
-        $this->request              = $container->get('request_stack')->getCurrentRequest();
+        $this->source_dir  = $arguments['source_dir'];
+
+        $this->container    = $container;
+        $this->em           = $container->get('doctrine.orm.entity_manager');
+        $this->generator    = $container->get('smart_media.generator');
+        $this->request      = $container->get('request_stack')->getCurrentRequest();
     }
 
     /**
@@ -79,8 +71,7 @@ class LocalProvider implements ProviderInterface
             return null;
         }
 
-        /** @var File $file */
-        $file = $this->filesRepo->find($id);
+        $file = $this->em->find(File::class, $id);
 
         if (null === $file) {
             return null;
@@ -110,7 +101,7 @@ class LocalProvider implements ProviderInterface
         $ending   = '';
 
         if ($filter) {
-            $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
+            $fileTransformed = $this->em->getRepository(FileTransformed::class)->findOneBy(['file' => $file, 'filter' => $filter]);
 
             if (isset($runtimeConfig['format'])) {
                 $ending = '.'.$runtimeConfig['format'];
@@ -145,8 +136,7 @@ class LocalProvider implements ProviderInterface
      */
     public function generateTransformedFile(int $id, $filter)
     {
-        /** @var File $file */
-        $file = $this->filesRepo->find($id);
+        $file = $this->find(File::class, $id);
 
         if (null === $file) {
             return null;
@@ -158,7 +148,7 @@ class LocalProvider implements ProviderInterface
             $runtimeConfig['format'] = 'png';
         }
 
-        $fileTransformed = $this->filesTransformedRepo->findOneBy(['file' => $file, 'filter' => $filter]);
+        $fileTransformed = $this->em->getRepository(FileTransformed::class)->findOneBy(['file' => $file, 'filter' => $filter]);
 
 //        if (null === $fileTransformed) {
             $imagine = $this->container->get('liip_imagine.binary.loader.default');
@@ -221,17 +211,25 @@ class LocalProvider implements ProviderInterface
      *
      * @throws \RuntimeException
      */
-    public function upload(File $file)
+    public function upload(File $file, $relative_path)
     {
+        /*
         if (empty($this->request)) {
-            $webDir = $this->container->getParameter('kernel.project_dir').'/public'.$file->getFullRelativePath();
+            //$webDir = $this->container->getParameter('kernel.project_dir').'/public'.$file->getFullRelativePath();
         } else {
             $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$file->getFullRelativePath();
         }
+        */
+        $webDir = $this->source_dir.$relative_path;
+
+//        dump($webDir);
 
         if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
             throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
         }
+
+//        dump($file->getFilename());
+//        die;
 
         $newFile = $file->getUploadedFile()->move($webDir, $file->getFilename());
 
@@ -260,7 +258,7 @@ class LocalProvider implements ProviderInterface
      */
     public function remove($id)
     {
-        $filesTransformed = $this->filesTransformedRepo->findBy(['file' => $id]);
+        $filesTransformed = $this->em->getRepository(FileTransformed::class)->findBy(['file' => $id]);
 
         /** @var FileTransformed $fileTransformed */
         foreach ($filesTransformed as $fileTransformed) {
@@ -312,7 +310,7 @@ class LocalProvider implements ProviderInterface
 
         return true;
     }
-    
+
     /**
      * Получить список файлов.
      *

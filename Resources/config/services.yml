@@ -2,10 +2,12 @@ parameters:
     smart_media.local.provider: SmartCore\Bundle\MediaBundle\Provider\LocalProvider
 
 services:
-    smart_media:
-        class: SmartCore\Bundle\MediaBundle\Service\MediaCloudService
+    SmartCore\Bundle\MediaBundle\Service\MediaCloudService:
         arguments: [ '@service_container', '@doctrine.orm.entity_manager', "%smart_media.config%" ]
         public: true
+
+    smart_media:
+        alias: SmartCore\Bundle\MediaBundle\Service\MediaCloudService
 
     smart_media.generator:
         public: true

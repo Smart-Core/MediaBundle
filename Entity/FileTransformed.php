@@ -8,6 +8,10 @@ use Smart\CoreBundle\Doctrine\ColumnTrait;
 /**
  * @ORM\Entity(repositoryClass="FileTransformedRepository")
  * @ORM\Table(name="media_files_transformed",
+ *      indexes={
+ *          @ORM\Index(columns={"collection"}),
+ *          @ORM\Index(columns={"storage"}),
+ *      },
  *      uniqueConstraints={
  *          @ORM\UniqueConstraint(columns={"filter", "file_id"}),
  *      }
@@ -27,18 +31,16 @@ class FileTransformed
     protected $file;
 
     /**
-     * @var Collection
+     * @var string
      *
-     * @ORM\ManyToOne(targetEntity="Collection", inversedBy="files")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\Column(type="string", length=2)
      */
     protected $collection;
 
     /**
-     * @var Storage
+     * @var string
      *
-     * @ORM\ManyToOne(targetEntity="Storage", inversedBy="files")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\Column(type="string", length=2)
      */
     protected $storage;
 
@@ -70,26 +72,6 @@ class FileTransformed
     public function getFullRelativeUrl()
     {
         return $this->getFile()->getFullRelativeUrl($this->getFilter());
-    }
-
-    /**
-     * @param Collection $collection
-     *
-     * @return $this
-     */
-    public function setCollection(Collection $collection)
-    {
-        $this->collection = $collection;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection
-     */
-    public function getCollection()
-    {
-        return $this->collection;
     }
 
     /**
@@ -155,22 +137,42 @@ class FileTransformed
     }
 
     /**
-     * @param Storage $storage
+     * @return string
+     */
+    public function getCollection(): string
+    {
+        return $this->collection;
+    }
+
+    /**
+     * @param string $collection
      *
      * @return $this
      */
-    public function setStorage(Storage $storage)
+    public function setCollection(string $collection): self
     {
-        $this->storage = $storage;
+        $this->collection = $collection;
 
         return $this;
     }
 
     /**
-     * @return Storage
+     * @return string
      */
-    public function getStorage()
+    public function getStorage(): string
     {
         return $this->storage;
+    }
+
+    /**
+     * @param string $storage
+     *
+     * @return $this
+     */
+    public function setStorage(string $storage): self
+    {
+        $this->storage = $storage;
+
+        return $this;
     }
 }

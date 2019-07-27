@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SmartCore\Bundle\MediaBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
@@ -50,19 +52,11 @@ class Storage
     protected $arguments;
 
     /**
-     * @var File[]|ArrayCollection
-     *
-     * @ORM\OneToMany(targetEntity="File", mappedBy="storage", fetch="EXTRA_LAZY")
-     */
-    protected $files;
-
-    /**
      * @param string $relativePath
      */
     public function __construct($relativePath = '')
     {
         $this->created_at       = new \DateTime();
-        $this->files            = new ArrayCollection();
         $this->relative_path    = $relativePath;
         $this->title            = 'Новое хранилище';
         $this->provider         = 'SmartCore\Bundle\MediaBundle\Provider\LocalProvider';
@@ -154,13 +148,5 @@ class Storage
     public function getProvider()
     {
         return $this->provider;
-    }
-
-    /**
-     * @return File[]
-     */
-    public function getFiles()
-    {
-        return $this->files;
     }
 }

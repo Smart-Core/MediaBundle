@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SmartCore\Bundle\MediaBundle\Service;
 
 use Doctrine\ORM\EntityManager;
@@ -7,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\Storage;
+use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -44,12 +47,16 @@ class MediaCloudService
 
         // storages
         foreach ($config['storages'] as $name => $val) {
+            $providerClass = $val['provider'];
+            /** @var ProviderInterface $provider */
+            $provider = new $providerClass($container, $val['arguments']);
+
             $s = new MediaStorage();
             $s->setCode($val['code'])
                 ->setTitle($val['title'])
                 ->setRelativePath($val['relative_path'])
-                ->setProvider($val['provider'])
-                ->setArguments($val['arguments'])
+                ->setProvider($provider)
+                //->setArguments($val['arguments'])
             ;
 
             $this->storages[$val['code']] = $s;
@@ -74,10 +81,11 @@ class MediaCloudService
 
         // collections
         foreach ($config['collections'] as $name => $val) {
-            $c = new MediaCollection();
+            $c = new MediaCollection($container);
             $c->setCode($val['code'])
                 ->setTitle($val['title'])
                 ->setRelativePath($val['relative_path'])
+                ->setDefaultFilter($val['default_filter'])
                 ->setFilenamePattern($val['filename_pattern'])
                 ->setFileRelativePathPattern($val['file_relative_path_pattern'])
                 ->setStorage($this->storages[$val['storage']])
@@ -92,10 +100,11 @@ class MediaCloudService
                 throw new \Exception('Collection with code "'.$dbCollection->getCode().'" is already exist');
             }
 
-            $c = new MediaCollection();
+            $c = new MediaCollection($container);
             $c->setCode($dbCollection->getCode())
                 ->setTitle($dbCollection->getTitle())
                 ->setRelativePath($dbCollection->getRelativePath())
+                ->setDefaultFilter($dbCollection->getDefaultFilter())
                 ->setFilenamePattern($dbCollection->getFilenamePattern())
                 ->setFileRelativePathPattern($dbCollection->getFileRelativePathPattern())
                 ->setStorage($this->storages[$dbCollection->getStorage()->getCode()])

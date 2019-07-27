@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SmartCore\Bundle\MediaBundle\Service;
 
 use Doctrine\ORM\EntityManager;
@@ -13,6 +15,7 @@ use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class MediaCollection extends AbstractCollectionService
 {
@@ -21,11 +24,13 @@ class MediaCollection extends AbstractCollectionService
     protected $code;
     protected $title;
     protected $relative_path;
-
+    /** @var MediaStorage */
     protected $storage;
     protected $default_filter;
     protected $file_relative_path_pattern;
     protected $filename_pattern;
+
+    protected $user_id;
 
     /**
      * @param ContainerInterface $container
@@ -33,10 +38,13 @@ class MediaCollection extends AbstractCollectionService
      */
     public function __construct(ContainerInterface $container = null, $id = null)
     {
-//        $this->em               = $container->get('doctrine.orm.entity_manager');
+        parent::__construct($container->get('doctrine.orm.entity_manager'));
 
-        // @todo разные провайдеры.
-//        $this->provider = new LocalProvider($container);
+        if ($container->has('security.token_storage') and $container->get('security.token_storage')->getToken()) {
+            $this->user_id = $container->get('security.token_storage')->getToken()->getUser()->getId();
+        } else{
+            $this->user_id = 0;
+        }
     }
 
     /**
@@ -45,6 +53,113 @@ class MediaCollection extends AbstractCollectionService
     public function __toString(): string
     {
         return $this->title;
+    }
+
+    /**
+     * @param UploadedFile $file
+     * @param Category|int $category
+     * @param array $tags
+     *
+     * @return int - ID файла в коллекции.
+     */
+    public function upload(\Symfony\Component\HttpFoundation\File\File $uploadedFile, $category = null, array $tags = null)
+    {
+        // @todo проверку на доступность загруженного файла
+        // могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
+        $file = new File($uploadedFile);
+        $file
+            ->setCollection($this->getCode())
+            ->setRelativePath($this->generateFilePath())
+            ->setFilename($this->generateFileName($file))
+            ->setUserId($this->user_id)
+            ->setStorage($this->storage->getCode())
+        ;
+
+//        dump($this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
+//        dump($file);
+
+        $newFile = $this->storage->getProvider()->upload($file, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
+
+        $this->em->persist($file);
+        $this->em->flush();
+
+        return $file->getId();
+    }
+
+    /**
+     * @param string|null $filter
+     *
+     * @return string
+     */
+    public function generateRelativePath($filter = null)
+    {
+        $relativePath = $this->getStorage()->getRelativePath();
+
+        if (!$filter) {
+            $filter = $this->getDefaultFilter();
+        }
+
+        if (empty($filter)) {
+            $filter = 'orig';
+        }
+
+        return $relativePath.'/'.$filter.$this->getRelativePath();
+    }
+
+    /**
+     * @param string|null $filter
+     *
+     * @return string
+     *
+     * @deprecated
+     */
+    public function getFullRelativePath($filter = null)
+    {
+        $relativePath = $this->getStorage()->getRelativePath().$this->getRelativePath();
+
+        if (empty($filter)) {
+            $filter = 'orig';
+        }
+
+        return $relativePath.'/'.$filter.$this->relative_path;
+    }
+
+    /**
+     * @return string
+     */
+    public function generateFilePath(): string
+    {
+        return $this->generatePattern($this->getFileRelativePathPattern());
+    }
+
+    /**
+     * @param File $file
+     *
+     * @return string
+     */
+    public function generateFileName(File $file)
+    {
+        $filename = $this->getFilenamePattern();
+
+        return $this->generatePattern($filename.'.'.$file->getUploadedFile()->getClientOriginalExtension());
+    }
+
+    /**
+     * @param string|null $pattern
+     *
+     * @return mixed|string
+     */
+    public function generatePattern($pattern = null)
+    {
+        $pattern = str_replace('{year}',     date('Y'), $pattern);
+        $pattern = str_replace('{month}',    date('m'), $pattern);
+        $pattern = str_replace('{day}',      date('d'), $pattern);
+        $pattern = str_replace('{hour}',     date('H'), $pattern);
+        $pattern = str_replace('{minutes}',  date('i'), $pattern);
+        $pattern = str_replace('{user_id}',  $this->user_id, $pattern);
+        $pattern = str_replace('{rand(10)}', substr(md5(microtime(true).uniqid()), 0, 10), $pattern);
+
+        return $pattern;
     }
 
     /**
@@ -108,19 +223,19 @@ class MediaCollection extends AbstractCollectionService
     }
 
     /**
-     * @return mixed
+     * @return MediaStorage
      */
-    public function getStorage()
+    public function getStorage(): MediaStorage
     {
         return $this->storage;
     }
 
     /**
-     * @param mixed $storage
+     * @param MediaStorage $storage
      *
      * @return $this
      */
-    public function setStorage($storage): self
+    public function setStorage(MediaStorage $storage): self
     {
         $this->storage = $storage;
 

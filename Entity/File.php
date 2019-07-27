@@ -29,7 +29,7 @@ class File
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=32, nullable=false)
+     * @ORM\Column(type="string", length=32, nullable=true)
      */
     protected $userId;
 
@@ -140,22 +140,6 @@ class File
             $this->setOriginalSize($uploadedFile->getSize());
             $this->setSize($uploadedFile->getSize());
         }
-    }
-
-    /**
-     * @param string|null $filter
-     *
-     * @return string
-     */
-    public function getFullRelativePath($filter = null)
-    {
-        $relativePath = $this->getStorage()->getRelativePath().$this->getCollection()->getRelativePath();
-
-        if (empty($filter)) {
-            $filter = 'orig';
-        }
-
-        return $relativePath.'/'.$filter.$this->relative_path;
     }
 
     /**

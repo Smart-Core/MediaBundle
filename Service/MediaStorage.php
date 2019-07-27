@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace SmartCore\Bundle\MediaBundle\Service;
 
+use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
+
 class MediaStorage
 {
     protected $code;
     protected $title;
     protected $relative_path;
 
+    /** @var ProviderInterface */
     protected $provider;
     protected $arguments;
 
@@ -90,19 +93,19 @@ class MediaStorage
     }
 
     /**
-     * @return mixed
+     * @return ProviderInterface
      */
-    public function getProvider()
+    public function getProvider(): ProviderInterface
     {
         return $this->provider;
     }
 
     /**
-     * @param mixed $provider
+     * @param ProviderInterface $provider
      *
      * @return $this
      */
-    public function setProvider($provider): self
+    public function setProvider(ProviderInterface $provider): self
     {
         $this->provider = $provider;
 

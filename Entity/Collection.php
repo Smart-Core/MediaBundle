@@ -79,19 +79,11 @@ class Collection
     protected $filename_pattern;
 
     /**
-     * @var File[]|ArrayCollection
-     *
-     * @ORM\OneToMany(targetEntity="File", mappedBy="collection", fetch="EXTRA_LAZY")
-     */
-    protected $files;
-
-    /**
      * @param string $relativePath
      */
     public function __construct($relativePath = '')
     {
         $this->created_at       = new \DateTime();
-        $this->files            = new ArrayCollection();
         $this->relative_path    = $relativePath;
 
         $this->filename_pattern            = '{hour}_{minutes}_{rand(10)}';
@@ -204,26 +196,6 @@ class Collection
     public function getFilenamePattern()
     {
         return $this->filename_pattern;
-    }
-
-    /**
-     * @param File[] $files
-     *
-     * @return $this
-     */
-    public function setFiles($files)
-    {
-        $this->files = $files;
-
-        return $this;
-    }
-
-    /**
-     * @return File[]
-     */
-    public function getFiles()
-    {
-        return $this->files;
     }
 
     /**

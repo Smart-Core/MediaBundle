@@ -57,7 +57,7 @@ class StatsCommand extends Command
 
         $table = new Table($output);
         $table
-            ->setHeaders(['Code', 'Collection', 'Storage', 'Files', 'Original size', 'Filters size', 'Summary size'])
+            ->setHeaders(['Code', 'Collection', 'Storage', 'Default filter', 'Files', 'Original size', 'Filters size', 'Summary size'])
             ->setStyle($style)
         ;
 
@@ -75,6 +75,7 @@ class StatsCommand extends Command
                 $collection->getCode(),
                 $collection->getTitle(),
                 $collection->getStorage()->getTitle(),
+                $collection->getDefaultFilter(),
                 $em->getRepository(File::class)->countByCollection($collection->getCode()),
                 $size.' MB',
                 $filtersSize.' MB',
