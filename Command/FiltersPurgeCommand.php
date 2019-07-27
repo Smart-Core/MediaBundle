@@ -2,26 +2,44 @@
 
 namespace SmartCore\Bundle\MediaBundle\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use SmartCore\Bundle\MediaBundle\Service\MediaCloudService;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class FiltersPurgeCommand extends ContainerAwareCommand
+class FiltersPurgeCommand extends Command
 {
+    protected static $defaultName = 'smart:media:filters:purge';
+
+    protected $em;
+    protected $mc;
+
+    /**
+     * StatsCommand constructor.
+     *
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em, MediaCloudService $mc)
+    {
+        parent::__construct();
+
+        $this->em = $em;
+        $this->mc = $mc;
+    }
+
     protected function configure()
     {
         $this
-            ->setName('smart:media:filters:purge')
             ->setDescription('Purge all filtered images.')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /** @var \Doctrine\ORM\EntityManager $em */
-        $em = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $em = $this->em;
 
         $output->writeln('<comment>Truncate FileTransformed Table...</comment>');
 
@@ -36,7 +54,7 @@ class FiltersPurgeCommand extends ContainerAwareCommand
         $output->writeln('<comment>Remove files...</comment>');
 
         foreach ($em->getRepository(Collection::class)->findAll() as $collection) {
-            $mc = $this->getContainer()->get('smart_media')->getCollection($collection->getId());
+            $mc = $this->mc->getCollection($collection->getId());
 
             $mc->purgeTransformedFiles();
         }

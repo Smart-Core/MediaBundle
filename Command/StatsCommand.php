@@ -2,35 +2,52 @@
 
 namespace SmartCore\Bundle\MediaBundle\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class StatsCommand extends ContainerAwareCommand
+class StatsCommand extends Command
 {
+    protected static $defaultName = 'smart:media:stats';
+
+    protected $em;
+
+    /**
+     * StatsCommand constructor.
+     *
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em)
+    {
+        parent::__construct();
+
+        $this->em = $em;
+    }
+
     protected function configure()
     {
         $this
-            ->setName('smart:media:stats')
             ->setDescription('Show media cloud statistics.')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /** @var \Doctrine\ORM\EntityManager $em */
-        $em = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $em = $this->em;
 
         $style = new TableStyle();
+        /*
         $style
-            ->setVerticalBorderChar(' ')
-            ->setCrossingChar(' ')
+            ->setVerticalBorderChars('', ' ')
+            ->setCrossingChars(' ')
         ;
+        */
 
         $table = new Table($output);
         $table

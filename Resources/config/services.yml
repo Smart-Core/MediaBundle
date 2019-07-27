@@ -16,3 +16,15 @@ services:
         arguments: [ '@smart_media' ]
         tags:
             - { name: twig.extension }
+
+    smart_media.stats_command:
+        class: SmartCore\Bundle\MediaBundle\Command\StatsCommand
+        arguments: ['@doctrine.orm.entity_manager']
+        tags:
+            - { name: console.command, command: 'smart:media:stats' }
+
+    smart_media.filters_purge_command:
+        class: SmartCore\Bundle\MediaBundle\Command\FiltersPurgeCommand
+        arguments: ['@doctrine.orm.entity_manager', '@smart_media']
+        tags:
+            - { name: console.command, command: 'smart:media:filters:purge' }
