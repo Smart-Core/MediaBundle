@@ -40,7 +40,10 @@ class MediaCollection extends AbstractCollectionService
     {
         parent::__construct($container->get('doctrine.orm.entity_manager'));
 
-        if ($container->has('security.token_storage') and $container->get('security.token_storage')->getToken()) {
+        if ($container->has('security.token_storage')
+            and $container->get('security.token_storage')->getToken()
+            and method_exists($container->get('security.token_storage')->getToken()->getUser(), 'getId')
+        ) {
             $this->user_id = $container->get('security.token_storage')->getToken()->getUser()->getId();
         } else{
             $this->user_id = 0;
