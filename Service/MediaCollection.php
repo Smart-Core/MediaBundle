@@ -59,17 +59,17 @@ class MediaCollection extends AbstractCollectionService
     }
 
     /**
-     * @param UploadedFile $file
+     * @param \Symfony\Component\HttpFoundation\File\File $file
      * @param Category|int $category
      * @param array $tags
      *
      * @return int - ID файла в коллекции.
      */
-    public function upload(\Symfony\Component\HttpFoundation\File\File $uploadedFile, $category = null, array $tags = null)
+    public function upload(\Symfony\Component\HttpFoundation\File\File $file, $category = null, array $tags = null)
     {
         // @todo проверку на доступность загруженного файла
         // могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
-        $file = new File($uploadedFile);
+        $file = new File($file);
         $file
             ->setCollection($this->getCode())
             ->setRelativePath($this->generateFilePath())
@@ -77,9 +77,6 @@ class MediaCollection extends AbstractCollectionService
             ->setUserId($this->user_id)
             ->setStorage($this->storage->getCode())
         ;
-
-//        dump($this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
-//        dump($file);
 
         $newFile = $this->storage->getProvider()->upload($file, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
 
