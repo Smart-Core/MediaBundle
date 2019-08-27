@@ -3,6 +3,7 @@
 namespace SmartCore\Bundle\MediaBundle\Provider;
 
 use Doctrine\ORM\EntityManager;
+use Liip\ImagineBundle\Model\FileBinary;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
@@ -10,6 +11,7 @@ use SmartCore\Bundle\MediaBundle\Service\GeneratorService;
 use SmartCore\Bundle\MediaBundle\Service\MediaCollection;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\MimeType\ExtensionGuesser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -154,9 +156,12 @@ class LocalProvider implements ProviderInterface
      * @param string $filter
      *
      * @return null|mixed
+     *
+     * ok
      */
     public function generateTransformedFile(int $id, $filter)
     {
+        /** @var File $file */
         $file = $this->em->find(File::class, $id);
 
         if (null === $file) {
@@ -164,7 +169,6 @@ class LocalProvider implements ProviderInterface
         }
 
         $runtimeConfig = [];
-
         if ($file and $file->isMimeType('png')) {
             $runtimeConfig['format'] = 'png';
         }
@@ -172,8 +176,6 @@ class LocalProvider implements ProviderInterface
         $fileTransformed = $this->em->getRepository(FileTransformed::class)->findOneBy(['file' => $file, 'filter' => $filter]);
 
 //        if (null === $fileTransformed) {
-            $imagine = $this->container->get('liip_imagine.binary.loader.default');
-            $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
 
             if ($file->isMimeType('image/jpeg') or $file->isMimeType('image/png') or $file->isMimeType('image/gif')) {
                 // dummy
@@ -183,40 +185,31 @@ class LocalProvider implements ProviderInterface
                 return null;
             }
 
-            $originalImage = $imagine->find($file->getFullRelativeUrl());
+            $path_orig = $this->getFilePath($file, 'orig');
 
-            if (empty($this->request)) {
-                $webDir = $this->container->getParameter('kernel.project_dir').'/public'.$this->generator->generateRelativePath($file, $filter);
-            } else {
-                $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$this->generator->generateRelativePath($file, $filter);
+            $path = $this->getFileTransformedPath($file, $filter);
+
+            if (!is_dir(dirname($path)) and false === @mkdir(dirname($path), 0777, true)) {
+                throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", dirname($path)));
             }
 
-            if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
-                throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
-            }
+            $originalImage = new FileBinary($path_orig, $file->getMimeType(), ExtensionGuesser::getInstance()->guess($file->getMimeType()));
 
-            if (isset($runtimeConfig['format'])) {
-                $ending = '.'.$runtimeConfig['format'];
-            } else {
-                $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
-            }
-
-            $transformedImagePathInfo = pathinfo($webDir.'/'.$file->getFilename());
-            $transformedImagePath = $transformedImagePathInfo['dirname'].'/'.$transformedImagePathInfo['filename'].$ending;
+            $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
             $transformedImage = $imagineFilterManager->applyFilter($originalImage, $filter, $runtimeConfig)->getContent();
 
-            file_put_contents($transformedImagePath, $transformedImage);
+            file_put_contents($path, $transformedImage);
 
             if (null === $fileTransformed) {
                 $fileTransformed = new FileTransformed();
                 $fileTransformed
                     ->setFile($file)
                     ->setFilter($filter)
-                    ->setSize((new \SplFileInfo($transformedImagePath))->getSize())
+                    ->setSize((new \SplFileInfo($path))->getSize())
                 ;
 
                 $this->em->persist($fileTransformed);
-                $this->em->flush($fileTransformed);
+                $this->em->flush();
             }
 
             return $transformedImage;
