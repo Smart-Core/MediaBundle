@@ -24,6 +24,7 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->scalarNode('default_storage')->defaultNull()->end()
                 ->scalarNode('default_filter')->defaultNull()->end()
+                ->scalarNode('upload_filter')->defaultNull()->end()
                 ->scalarNode('file_relative_path_pattern')->defaultValue('/{year}/{month}/{day}')->end()
                 ->scalarNode('filename_pattern')->defaultValue('{hour}_{minutes}_{rand(10)}')->end()
                 ->arrayNode('storages')
@@ -49,9 +50,9 @@ class Configuration implements ConfigurationInterface
                             ->scalarNode('code')->end()
                             ->scalarNode('title')->end()
                             ->scalarNode('relative_path')->defaultValue('')->end()
-
                             ->scalarNode('storage')->defaultNull()->end()
                             ->scalarNode('default_filter')->defaultNull()->end()
+                            ->scalarNode('upload_filter')->defaultNull()->end()
                             ->scalarNode('file_relative_path_pattern')->defaultNull()->end()
                             ->scalarNode('filename_pattern')->defaultNull()->end()
                         ->end()

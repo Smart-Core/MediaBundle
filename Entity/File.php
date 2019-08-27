@@ -188,7 +188,7 @@ class File
     }
 
     /**
-     * @return FileTransformed[]|
+     * @return FileTransformed[]
      */
     public function getFilesTransformed()
     {

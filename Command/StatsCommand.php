@@ -44,7 +44,6 @@ class StatsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-//        dump($this->mc->getCollectionsList());
         $em = $this->em;
 
         $style = new TableStyle();

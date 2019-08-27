@@ -17,24 +17,19 @@ class LocalProvider implements ProviderInterface
 {
     use ContainerAwareTrait;
 
-    /**
-     * @var string
-     */
-    protected $source_dir;
+    /** @var string  */
+    protected $original_dir;
 
-    /**
-     * @var EntityManager
-     */
+    /** @var string */
+    protected $filter_dir;
+
+    /** @var EntityManager */
     protected $em;
 
-    /**
-     * @var GeneratorService
-     */
+    /** @var GeneratorService  */
     protected $generator;
 
-    /**
-     * @var Request
-     */
+    /** @var Request */
     protected $request;
 
     /** @var MediaCollection */
@@ -48,10 +43,16 @@ class LocalProvider implements ProviderInterface
      */
     public function __construct(ContainerInterface $container, array $arguments = [])
     {
-        if (isset($arguments['source_dir'])) {
-            $this->source_dir = $arguments['source_dir'];
+        if (isset($arguments['filter_dir'])) {
+            $this->filter_dir = $arguments['filter_dir'];
         } else {
-            $this->source_dir = "%kernel.project_dir%/public"; // @todo
+            $this->filter_dir = $container->getParameter('kernel.project_dir').'/public';
+        }
+
+        if (isset($arguments['original_dir'])) {
+            $this->original_dir = $arguments['original_dir'];
+        } else {
+            $this->original_dir = $container->getParameter('kernel.project_dir').'/public';
         }
 
         $this->container    = $container;
@@ -230,43 +231,19 @@ class LocalProvider implements ProviderInterface
      * @return \Symfony\Component\HttpFoundation\File\File|void
      *
      * @throws \RuntimeException
+     *
+     * ok
      */
     public function upload(File $file, $relative_path)
     {
-        /*
-        if (empty($this->request)) {
-            //$webDir = $this->container->getParameter('kernel.project_dir').'/public'.$file->getFullRelativePath();
-        } else {
-            $webDir = dirname($this->request->server->get('SCRIPT_FILENAME')).$file->getFullRelativePath();
-        }
-        */
-        $webDir = $this->source_dir.$relative_path;
+        $upload_dir = $this->original_dir.$relative_path;
 
-//        dump($webDir);
-
-        if (!is_dir($webDir) and false === @mkdir($webDir, 0777, true)) {
-            throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $webDir));
+        if (!is_dir($upload_dir) and false === @mkdir($upload_dir, 0777, true)) {
+            throw new \RuntimeException(sprintf("Unable to create the %s directory.\n", $upload_dir));
         }
 
-//        dump($file->getFilename());
-//        die;
+        $newFile = $file->getUploadedFile()->move($upload_dir, $file->getFilename());
 
-        $newFile = $file->getUploadedFile()->move($webDir, $file->getFilename());
-
-        // @todo настройка качества сжатия и условное уменьшение т.е. если картинка больше заданных размеров.
-        // @todo возможность использовать Imagick, если доступен.
-        // @todo поддержку PNG
-        /*
-        if (strpos($newFile->getMimeType(), 'jpeg') !== false) {
-            $img = imagecreatefromjpeg($newFile->getPathname());
-            imagejpeg($img, $newFile->getPathname(), 90);
-            imagedestroy($img);
-
-            clearstatcache();
-
-            $file->setSize($newFile->getSize());
-        }
-        */
         return $newFile;
     }
 
@@ -275,20 +252,22 @@ class LocalProvider implements ProviderInterface
      *
      * @return bool
      *
-     * @todo качественную обработку ошибок.
+     * @todo обработку ошибок.
+     *
+     * ok
      */
     public function remove($id)
     {
-        $filesTransformed = $this->em->getRepository(FileTransformed::class)->findBy(['file' => $id]);
+        /** @var File $file */
+        $file = $this->em->find(File::class, $id);
+
+        if (!$file) {
+            return false;
+        }
 
         /** @var FileTransformed $fileTransformed */
-        foreach ($filesTransformed as $fileTransformed) {
-            if (empty($this->request)) {
-                //$fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFullRelativeUrl();
-                $fullPath = $this->getSourceDir().$fileTransformed->getFullRelativeUrl();
-            } else {
-                $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFullRelativeUrl();
-            }
+        foreach ($file->getFilesTransformed() as $fileTransformed) {
+            $fullPath = $this->getFileTransformedPath($file, $fileTransformed->getFilter());
 
             if (file_exists($fullPath)) {
                 @unlink($fullPath);
@@ -296,29 +275,58 @@ class LocalProvider implements ProviderInterface
         }
 
         // Удаление оригинала.
-        if (!empty($fileTransformed) and $fileTransformed instanceof FileTransformed) {
-            if (empty($this->request)) {
-                //$fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFile()->getFullRelativeUrl();
-                $fullPath = $this->getSourceDir().$fileTransformed->getFile()->getFullRelativeUrl();
-            } else {
-                $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFile()->getFullRelativeUrl();
-            }
+        $fullPath = $this->getFilePath($file, 'orig');
 
-            return @unlink($fullPath);
-        }
+        @unlink($fullPath);
 
         return true;
     }
 
     /**
-     * @param Collection $collection
+     * @param File $file
+     * @param null $filter
+     *
+     * @return string
+     *
+     * ok
+     */
+    public function getFilePath(File $file, $filter = null): string
+    {
+        $path = $this->original_dir.$this->mediaCollection->generateRelativePath($filter);
+        $path = str_replace('{user_id}', $file->getUserId(), $path);
+        $path .= $file->getRelativePath().'/'.$file->getFilename();
+
+        return $path;
+    }
+
+    /**
+     * @param File $file
+     * @param null $filter
+     *
+     * @return string
+     *
+     * ok
+     */
+    public function getFileTransformedPath(File $file, $filter = null): string
+    {
+        $path = $this->filter_dir.$this->mediaCollection->generateRelativePath($filter);
+        $path = str_replace('{user_id}', $file->getUserId(), $path);
+        $path .= $file->getRelativePath().'/'.$file->getFilename();
+
+        return $path;
+    }
+
+    /**
+     * @param $collection
      *
      * @return bool
+     *
+     * ok
      */
-    public function purgeTransformedFiles(Collection $collection)
+    public function purgeTransformedFiles($collection)
     {
-        foreach ($this->container->get('liip_imagine.filter.configuration')->all() as $filter_name => $filter) {
-            $dir = $this->getSourceDir().'/public'.$collection->getStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
+        foreach ($this->container->get('smart_imagine_configuration')->all() as $filter_name => $filter) {
+            $dir = $this->filter_dir.'/'.$filter_name;
 
             if (is_dir($dir)) {
                 foreach(new \RecursiveIteratorIterator(
@@ -367,13 +375,5 @@ class LocalProvider implements ProviderInterface
         $this->mediaCollection = $mediaCollection;
 
         return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSourceDir(): string
-    {
-        return $this->source_dir;
     }
 }

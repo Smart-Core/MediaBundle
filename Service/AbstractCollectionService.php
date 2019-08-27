@@ -24,6 +24,9 @@ abstract class AbstractCollectionService
     /** @var string|null */
     protected $default_filter;
 
+    /** @var string|null */
+    protected $upload_filter;
+
     /**
      * AbstractCollectionService constructor.
      *
@@ -99,7 +102,7 @@ abstract class AbstractCollectionService
             return;
         }
 
-        $this->storage->getProvider()->remove($id);
+        $this->getProvider()->remove($id);
 
         $file = $this->em->find(File::class, $id);
 
@@ -119,7 +122,7 @@ abstract class AbstractCollectionService
      */
     public function generateTransformedFile(int $id, $filter)
     {
-        return $this->storage->getProvider()->generateTransformedFile($id, $filter);
+        return $this->getProvider()->generateTransformedFile($id, $filter);
     }
 
     /**
@@ -127,7 +130,7 @@ abstract class AbstractCollectionService
      */
     public function purgeTransformedFiles()
     {
-        return $this->storage->getProvider()->purgeTransformedFiles($this->collection);
+        return $this->getProvider()->purgeTransformedFiles($this);
     }
 
     /**
@@ -161,6 +164,26 @@ abstract class AbstractCollectionService
     public function setDefaultFilter(?string $default_filter): self
     {
         $this->default_filter = $default_filter;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getUploadFilter(): ?string
+    {
+        return $this->upload_filter;
+    }
+
+    /**
+     * @param string|null $upload_filter
+     *
+     * @return $this
+     */
+    public function setUploadFilter(?string $upload_filter): self
+    {
+        $this->upload_filter = $upload_filter;
 
         return $this;
     }

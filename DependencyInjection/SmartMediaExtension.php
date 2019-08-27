@@ -25,6 +25,11 @@ class SmartMediaExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
 
+        foreach ($config['collections'] as $name => $val) {
+            $config['collections'][$name]['default_filter'] = $val['default_filter'] ?: $config['default_filter'];
+            $config['collections'][$name]['upload_filter']  = $val['upload_filter'] ?: $config['upload_filter'];
+        }
+
         // @todo првоерка на наличие default_filter в liip imagine
 
         $container->setParameter('smart_media.config', $config);

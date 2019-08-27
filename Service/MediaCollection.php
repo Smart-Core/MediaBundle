@@ -77,7 +77,7 @@ class MediaCollection extends AbstractCollectionService
 
         $this->setDefaultFilter(null);
 
-        if ($tmp_default_filter) {
+        if ($this->getUploadFilter()) {
             $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
 
             if ($file->getMimeType() == 'image/jpeg' or $file->getMimeType() == 'image/png' or $file->getMimeType() == 'image/gif') {
@@ -95,7 +95,7 @@ class MediaCollection extends AbstractCollectionService
                 $runtimeConfig['format'] = 'png';
             }
 
-            $transformedImage = $imagineFilterManager->applyFilter($fileBinary, $tmp_default_filter, $runtimeConfig)->getContent();
+            $transformedImage = $imagineFilterManager->applyFilter($fileBinary, $this->getUploadFilter(), $runtimeConfig)->getContent();
 
             if ($file instanceof UploadedFile) {
                 $tmp_uploaded_file = $this->container->getParameter('kernel.cache_dir').'/'.$file->getClientOriginalName();

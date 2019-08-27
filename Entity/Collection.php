@@ -28,11 +28,18 @@ class Collection
     protected $code;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", nullable=true)
      */
     protected $default_filter;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected $upload_filter;
 
     /**
      * @var array
@@ -234,6 +241,26 @@ class Collection
     public function setCode(string $code): self
     {
         $this->code = $code;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getUploadFilter(): ?string
+    {
+        return $this->upload_filter;
+    }
+
+    /**
+     * @param string|null $upload_filter
+     *
+     * @return $this
+     */
+    public function setUploadFilter(?string $upload_filter): self
+    {
+        $this->upload_filter = $upload_filter;
 
         return $this;
     }

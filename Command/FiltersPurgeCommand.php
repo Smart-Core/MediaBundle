@@ -15,19 +15,19 @@ class FiltersPurgeCommand extends Command
     protected static $defaultName = 'smart:media:filters:purge';
 
     protected $em;
-    protected $mc;
+    protected $mcs;
 
     /**
      * StatsCommand constructor.
      *
      * @param EntityManagerInterface $em
      */
-    public function __construct(EntityManagerInterface $em, MediaCloudService $mc)
+    public function __construct(EntityManagerInterface $em, MediaCloudService $mcs)
     {
         parent::__construct();
 
         $this->em = $em;
-        $this->mc = $mc;
+        $this->mcs = $mcs;
     }
 
     protected function configure()
@@ -39,12 +39,10 @@ class FiltersPurgeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $em = $this->em;
-
         $output->writeln('<comment>Truncate FileTransformed Table...</comment>');
 
-        $cmd = $em->getClassMetadata(FileTransformed::class);
-        $connection = $em->getConnection();
+        $cmd = $this->em->getClassMetadata(FileTransformed::class);
+        $connection = $this->em->getConnection();
         $dbPlatform = $connection->getDatabasePlatform();
         $connection->query('SET FOREIGN_KEY_CHECKS=0');
         $q = $dbPlatform->getTruncateTableSql($cmd->getTableName());
@@ -53,10 +51,8 @@ class FiltersPurgeCommand extends Command
 
         $output->writeln('<comment>Remove files...</comment>');
 
-        foreach ($em->getRepository(Collection::class)->findAll() as $collection) {
-            $mc = $this->mc->getCollection($collection->getId());
-
-            $mc->purgeTransformedFiles();
+        foreach ($this->mcs->getCollections() as $collection) {
+            $collection->purgeTransformedFiles();
         }
     }
 }
