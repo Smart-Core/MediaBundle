@@ -12,20 +12,17 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 abstract class AbstractCollectionService
 {
-    /**
-     * @var EntityManagerInterface
-     */
+    /** @var EntityManagerInterface */
     protected $em;
 
-    /**
-     * @var GeneratorService
-     */
+    /** @var GeneratorService */
     protected $generator;
 
-    /**
-     * @var ProviderInterface
-     */
+    /** @var ProviderInterface */
     protected $provider;
+
+    /** @var string|null */
+    protected $default_filter;
 
     /**
      * AbstractCollectionService constructor.
@@ -48,6 +45,14 @@ abstract class AbstractCollectionService
         $this->provider = $provider;
 
         return $this;
+    }
+
+    /**
+     * @return ProviderInterface
+     */
+    public function getProvider(): ProviderInterface
+    {
+        return $this->provider;
     }
 
     /**
@@ -138,5 +143,25 @@ abstract class AbstractCollectionService
     public function findBy($categoryId = null, array $orderBy = null, $limit = null, $offset = null)
     {
         // @todo
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultFilter(): ?string
+    {
+        return $this->default_filter;
+    }
+
+    /**
+     * @param string|null $default_filter
+     *
+     * @return $this
+     */
+    public function setDefaultFilter(?string $default_filter): self
+    {
+        $this->default_filter = $default_filter;
+
+        return $this;
     }
 }

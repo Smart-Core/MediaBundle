@@ -7,6 +7,7 @@ use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
 use SmartCore\Bundle\MediaBundle\Entity\FileTransformed;
 use SmartCore\Bundle\MediaBundle\Service\GeneratorService;
+use SmartCore\Bundle\MediaBundle\Service\MediaCollection;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,6 +36,9 @@ class LocalProvider implements ProviderInterface
      * @var Request
      */
     protected $request;
+
+    /** @var MediaCollection */
+    protected $mediaCollection;
 
     /**
      * LocalProvider constructor.
@@ -75,6 +79,7 @@ class LocalProvider implements ProviderInterface
             return null;
         }
 
+        /** @var File $file */
         $file = $this->em->find(File::class, $id);
 
         if (null === $file) {
@@ -87,10 +92,12 @@ class LocalProvider implements ProviderInterface
 
         try {
             $this->container->get('liip_imagine.filter.configuration')->get($filter);
+//            $this->container->get('smart_imagine_configuration')->get($filter);
         } catch (\RuntimeException $e) {
             if ($filter !== 'orig') {
                 try {
                     $this->container->get('liip_imagine.filter.configuration')->get($default_filter);
+//                    $this->container->get('smart_imagine_configuration')->get($default_filter);
 
                     $filter = $default_filter;
                 } catch (\RuntimeException $e) {
@@ -111,13 +118,14 @@ class LocalProvider implements ProviderInterface
                 $ending = '.'.$runtimeConfig['format'];
             } else {
                 $ending = '.'.$this->container->get('liip_imagine.filter.configuration')->get($filter)['format'];
+//                $ending = '.'.$this->container->get('smart_imagine_configuration')->get($filter)['format'];
             }
 
             if (null === $fileTransformed) {
                 //$ending .= '?id='.$file->getId();
                 return $basePath.
-                    $file->getStorage()->getRelativePath().
-                    $file->getCollection()->getRelativePath().
+                    $file->getStorage()->getRelativePath(). // @todo !!!
+                    $file->getCollection()->getRelativePath(). // @todo !!!
                     '/'.$filter.'/img.php?id='.$file->getId()
                 ;
             }
@@ -140,7 +148,7 @@ class LocalProvider implements ProviderInterface
      */
     public function generateTransformedFile(int $id, $filter)
     {
-        $file = $this->find(File::class, $id);
+        $file = $this->em->find(File::class, $id);
 
         if (null === $file) {
             return null;
@@ -329,5 +337,33 @@ class LocalProvider implements ProviderInterface
     public function findBy($categoryId = null, array $orderBy = null, $limit = null, $offset = null)
     {
         // @todo
+    }
+
+    /**
+     * @return MediaCollection
+     */
+    public function getMediaCollection(): MediaCollection
+    {
+        return $this->mediaCollection;
+    }
+
+    /**
+     * @param MediaCollection $mediaCollection
+     *
+     * @return $this
+     */
+    public function setMediaCollection(MediaCollection $mediaCollection): self
+    {
+        $this->mediaCollection = $mediaCollection;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSourceDir(): string
+    {
+        return $this->source_dir;
     }
 }

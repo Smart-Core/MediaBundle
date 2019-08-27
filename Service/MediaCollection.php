@@ -29,8 +29,6 @@ class MediaCollection extends AbstractCollectionService
     /** @var MediaStorage */
     protected $storage;
 
-    /** @var string|null  */
-    protected $default_filter;
     protected $file_relative_path_pattern;
     protected $filename_pattern;
 
@@ -166,7 +164,7 @@ class MediaCollection extends AbstractCollectionService
             $filter = 'orig';
         }
 
-        return $relativePath.'/'.$filter.$this->relative_path;
+        return $relativePath.'/'.$filter;
     }
 
     /**
@@ -284,26 +282,9 @@ class MediaCollection extends AbstractCollectionService
     public function setStorage(MediaStorage $storage): self
     {
         $this->storage = $storage;
+        $this->setProvider($storage->getProvider()); // @todo
 
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getDefaultFilter(): ?string
-    {
-        return $this->default_filter;
-    }
-
-    /**
-     * @param string|null $default_filter
-     *
-     * @return $this
-     */
-    public function setDefaultFilter(?string $default_filter): self
-    {
-        $this->default_filter = $default_filter;
+        $this->provider->setMediaCollection($this); // @todo
 
         return $this;
     }

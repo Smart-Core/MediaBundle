@@ -163,7 +163,7 @@ class MediaCloudService
             return null;
         }
 
-        return $this->getCollection($file->getCollection()->getId())->get($id, $filter);
+        return $this->getCollection($file->getCollection())->get($id, $filter);
     }
 
     /**

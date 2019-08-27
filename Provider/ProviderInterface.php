@@ -14,7 +14,7 @@ interface ProviderInterface
      *
      * @return string|null
      */
-    public function get($id, $filter = null);
+    public function get($id, $filter = null, $default_filter = null);
 
     /**
      * @param File $file

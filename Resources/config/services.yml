@@ -9,6 +9,10 @@ services:
     smart_media:
         alias: SmartCore\Bundle\MediaBundle\Service\MediaCloudService
 
+    smart_imagine_configuration:
+        alias: liip_imagine.filter.configuration
+        public: true
+
     smart_media.generator:
         public: true
         class: SmartCore\Bundle\MediaBundle\Service\GeneratorService

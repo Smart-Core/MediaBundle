@@ -65,8 +65,7 @@ class StatsCommand extends Command
 
         foreach ($this->mc->getCollections() as $collection) {
             $size = round($em->getRepository(File::class)->summarySize($collection->getCode()) / 1024 / 1024, 2);
-            //$filtersSize = round($em->getRepository(FileTransformed::class)->summarySize($collection) / 1024 / 1024, 2);
-            $filtersSize = 0;
+            $filtersSize = round($em->getRepository(FileTransformed::class)->summarySize($collection) / 1024 / 1024, 2);
             $sum = $size + $filtersSize;
 
             $totalSize += $sum;

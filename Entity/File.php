@@ -151,6 +151,8 @@ class File
      * @param string|null $filter
      *
      * @return string
+     *
+     * @deprecated
      */
     public function getFullRelativeUrl($filter = null)
     {
