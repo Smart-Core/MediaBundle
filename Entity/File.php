@@ -29,7 +29,7 @@ class File
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=32, nullable=true)
+     * @ORM\Column(type="string", length=36, nullable=true)
      */
     protected $userId;
 
@@ -135,8 +135,13 @@ class File
                 $this->setType($uploadedFile->getType());
             }
 
+            if ($uploadedFile instanceof UploadedFile) {
+                $this->setOriginalFilename($uploadedFile->getClientOriginalName());
+            } else {
+                $this->setOriginalFilename($uploadedFile->getFilename());
+            }
+
             $this->setMimeType($uploadedFile->getMimeType());
-            $this->setOriginalFilename($uploadedFile->getClientOriginalName());
             $this->setOriginalSize($uploadedFile->getSize());
             $this->setSize($uploadedFile->getSize());
         }
@@ -153,7 +158,7 @@ class File
     }
 
     /**
-     * @return UploadedFile
+     * @return \Symfony\Component\HttpFoundation\File\File
      */
     public function getUploadedFile()
     {

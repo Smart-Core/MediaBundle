@@ -6,6 +6,7 @@ namespace SmartCore\Bundle\MediaBundle\Service;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
+use Liip\ImagineBundle\Model\FileBinary;
 use SmartCore\Bundle\MediaBundle\Entity\Category;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
 use SmartCore\Bundle\MediaBundle\Entity\File;
@@ -14,6 +15,7 @@ use SmartCore\Bundle\MediaBundle\Provider\LocalProvider;
 use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\MimeType\ExtensionGuesser;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -26,6 +28,8 @@ class MediaCollection extends AbstractCollectionService
     protected $relative_path;
     /** @var MediaStorage */
     protected $storage;
+
+    /** @var string|null  */
     protected $default_filter;
     protected $file_relative_path_pattern;
     protected $filename_pattern;
@@ -40,13 +44,17 @@ class MediaCollection extends AbstractCollectionService
     {
         parent::__construct($container->get('doctrine.orm.entity_manager'));
 
+        $this->container = $container;
+
+        $this->default_filter = null;
+
         if ($container->has('security.token_storage')
             and $container->get('security.token_storage')->getToken()
             and method_exists($container->get('security.token_storage')->getToken()->getUser(), 'getId')
         ) {
             $this->user_id = $container->get('security.token_storage')->getToken()->getUser()->getId();
         } else{
-            $this->user_id = 0;
+            $this->user_id = null;
         }
     }
 
@@ -67,23 +75,60 @@ class MediaCollection extends AbstractCollectionService
      */
     public function upload(\Symfony\Component\HttpFoundation\File\File $file, $category = null, array $tags = null)
     {
+        $tmp_default_filter = $this->getDefaultFilter();
+
+        $this->setDefaultFilter(null);
+
+        if ($tmp_default_filter) {
+            $imagineFilterManager = $this->container->get('liip_imagine.filter.manager');
+
+            if ($file->getMimeType() == 'image/jpeg' or $file->getMimeType() == 'image/png' or $file->getMimeType() == 'image/gif') {
+                // dummy
+            } else {
+                echo 'Unsupported image format';
+
+                return null;
+            }
+
+            $fileBinary = new FileBinary($file->getPathname(), $file->getMimeType(), ExtensionGuesser::getInstance()->guess($file->getMimeType()));
+
+            $runtimeConfig = [];
+            if ($file->getMimeType() == 'image/png') {
+                $runtimeConfig['format'] = 'png';
+            }
+
+            $transformedImage = $imagineFilterManager->applyFilter($fileBinary, $tmp_default_filter, $runtimeConfig)->getContent();
+
+            if ($file instanceof UploadedFile) {
+                $tmp_uploaded_file = $this->container->getParameter('kernel.cache_dir').'/'.$file->getClientOriginalName();
+            } else {
+                $tmp_uploaded_file = $this->container->getParameter('kernel.cache_dir').'/'.$file->getFilename();
+            }
+
+            file_put_contents($tmp_uploaded_file, $transformedImage);
+
+            $file = new \Symfony\Component\HttpFoundation\File\File($tmp_uploaded_file);
+        }
+
         // @todo проверку на доступность загруженного файла
         // могут быть проблеммы, если в настройках сервера указан маленький upload_max_filesize и/или post_max_size
-        $file = new File($file);
-        $file
+        $fileEntity = new File($file);
+        $fileEntity
             ->setCollection($this->getCode())
             ->setRelativePath($this->generateFilePath())
-            ->setFilename($this->generateFileName($file))
+            ->setFilename($this->generateFileName($fileEntity))
             ->setUserId($this->user_id)
             ->setStorage($this->storage->getCode())
         ;
 
-        $newFile = $this->storage->getProvider()->upload($file, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
+        $newFile = $this->storage->getProvider()->upload($fileEntity, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
 
-        $this->em->persist($file);
+        $this->setDefaultFilter($tmp_default_filter);
+
+        $this->em->persist($fileEntity);
         $this->em->flush();
 
-        return $file->getId();
+        return $fileEntity->getId();
     }
 
     /**
@@ -141,7 +186,8 @@ class MediaCollection extends AbstractCollectionService
     {
         $filename = $this->getFilenamePattern();
 
-        return $this->generatePattern($filename.'.'.$file->getUploadedFile()->getClientOriginalExtension());
+        //return $this->generatePattern($filename.'.'.$file->getUploadedFile()->getClientOriginalExtension());
+        return $this->generatePattern($filename.'.'.$file->getUploadedFile()->getFileInfo()->getExtension()); // @todo
     }
 
     /**
@@ -243,19 +289,19 @@ class MediaCollection extends AbstractCollectionService
     }
 
     /**
-     * @return mixed
+     * @return string|null
      */
-    public function getDefaultFilter()
+    public function getDefaultFilter(): ?string
     {
         return $this->default_filter;
     }
 
     /**
-     * @param mixed $default_filter
+     * @param string|null $default_filter
      *
      * @return $this
      */
-    public function setDefaultFilter($default_filter): self
+    public function setDefaultFilter(?string $default_filter): self
     {
         $this->default_filter = $default_filter;
 

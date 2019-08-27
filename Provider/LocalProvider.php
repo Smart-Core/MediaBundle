@@ -44,7 +44,11 @@ class LocalProvider implements ProviderInterface
      */
     public function __construct(ContainerInterface $container, array $arguments = [])
     {
-        $this->source_dir  = $arguments['source_dir'];
+        if (isset($arguments['source_dir'])) {
+            $this->source_dir = $arguments['source_dir'];
+        } else {
+            $this->source_dir = "%kernel.project_dir%/public/"; // @todo
+        }
 
         $this->container    = $container;
         $this->em           = $container->get('doctrine.orm.entity_manager');
@@ -236,6 +240,7 @@ class LocalProvider implements ProviderInterface
         // @todo настройка качества сжатия и условное уменьшение т.е. если картинка больше заданных размеров.
         // @todo возможность использовать Imagick, если доступен.
         // @todo поддержку PNG
+        /*
         if (strpos($newFile->getMimeType(), 'jpeg') !== false) {
             $img = imagecreatefromjpeg($newFile->getPathname());
             imagejpeg($img, $newFile->getPathname(), 90);
@@ -245,7 +250,7 @@ class LocalProvider implements ProviderInterface
 
             $file->setSize($newFile->getSize());
         }
-
+        */
         return $newFile;
     }
 
