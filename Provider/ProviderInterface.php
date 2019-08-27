@@ -39,4 +39,13 @@ interface ProviderInterface
      * @return File[]|null
      */
     public function findBy($categoryId = null, array $orderBy = null, $limit = null, $offset = null);
+
+    /**
+     * Поддерживаются ли фильтры на стороне провайдера?
+     *
+     * Если нет, то нужно получать оригинал, изменять его на сервере и потом закачивать в провадер.
+     *
+     * @return bool
+     */
+    public function isSupportFilter(): bool;
 }

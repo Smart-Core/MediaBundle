@@ -51,13 +51,21 @@ class LocalProvider implements ProviderInterface
         if (isset($arguments['source_dir'])) {
             $this->source_dir = $arguments['source_dir'];
         } else {
-            $this->source_dir = "%kernel.project_dir%/public/"; // @todo
+            $this->source_dir = "%kernel.project_dir%/public"; // @todo
         }
 
         $this->container    = $container;
         $this->em           = $container->get('doctrine.orm.entity_manager');
         $this->generator    = $container->get('smart_media.generator');
         $this->request      = $container->get('request_stack')->getCurrentRequest();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSupportFilter(): bool
+    {
+        return true;
     }
 
     /**
@@ -276,7 +284,8 @@ class LocalProvider implements ProviderInterface
         /** @var FileTransformed $fileTransformed */
         foreach ($filesTransformed as $fileTransformed) {
             if (empty($this->request)) {
-                $fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFullRelativeUrl();
+                //$fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFullRelativeUrl();
+                $fullPath = $this->getSourceDir().$fileTransformed->getFullRelativeUrl();
             } else {
                 $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFullRelativeUrl();
             }
@@ -289,7 +298,8 @@ class LocalProvider implements ProviderInterface
         // Удаление оригинала.
         if (!empty($fileTransformed) and $fileTransformed instanceof FileTransformed) {
             if (empty($this->request)) {
-                $fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFile()->getFullRelativeUrl();
+                //$fullPath = $this->container->getParameter('kernel.project_dir').'/public'.$fileTransformed->getFile()->getFullRelativeUrl();
+                $fullPath = $this->getSourceDir().$fileTransformed->getFile()->getFullRelativeUrl();
             } else {
                 $fullPath = dirname($this->request->server->get('SCRIPT_FILENAME')).$fileTransformed->getFile()->getFullRelativeUrl();
             }
@@ -308,7 +318,7 @@ class LocalProvider implements ProviderInterface
     public function purgeTransformedFiles(Collection $collection)
     {
         foreach ($this->container->get('liip_imagine.filter.configuration')->all() as $filter_name => $filter) {
-            $dir = getcwd().'/public'.$collection->getStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
+            $dir = $this->getSourceDir().'/public'.$collection->getStorage()->getRelativePath().$collection->getRelativePath().'/'.$filter_name;
 
             if (is_dir($dir)) {
                 foreach(new \RecursiveIteratorIterator(

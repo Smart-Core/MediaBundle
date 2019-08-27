@@ -4,8 +4,8 @@ smart_media:
     providers:
         local:
             class: SmartCore\Bundle\MediaBundle\Provider\LocalProvider
-            baseUrl: '{basePath}/_media'
-            directoryOriginal: '%kernel.project_dir%/usr/media_cloud'
+            #directoryOriginal: '%kernel.project_dir%/usr/media_cloud'
+            directoryOriginal: '%kernel.project_dir%/public/_media'
             directoryWeb: '%kernel.project_dir%/public/_media'
             webPath: '/_media'
         remote:
