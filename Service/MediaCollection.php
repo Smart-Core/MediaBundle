@@ -26,7 +26,12 @@ class MediaCollection extends AbstractCollectionService
     protected $code;
     protected $title;
     protected $relative_path;
-    /** @var MediaStorage */
+
+    /**
+     * @var MediaStorage
+     *
+     * @deprecated
+     */
     protected $storage;
 
     protected $file_relative_path_pattern;
@@ -36,7 +41,7 @@ class MediaCollection extends AbstractCollectionService
 
     /**
      * @param ContainerInterface $container
-     * @param int $id
+     * @param int|null $id
      */
     public function __construct(ContainerInterface $container = null, $id = null)
     {
@@ -119,7 +124,7 @@ class MediaCollection extends AbstractCollectionService
             ->setStorage($this->storage->getCode())
         ;
 
-        $newFile = $this->storage->getProvider()->upload($fileEntity, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
+        $newFile = $this->getProvider()->upload($fileEntity, $this->generatePattern($this->generateRelativePath().$this->generateFilePath()));
 
         $this->setDefaultFilter($tmp_default_filter);
 
@@ -282,8 +287,9 @@ class MediaCollection extends AbstractCollectionService
     public function setStorage(MediaStorage $storage): self
     {
         $this->storage = $storage;
-        $this->setProvider($storage->getProvider()); // @todo
+        //$this->setProvider($storage->getProvider()); // @todo
 
+        $this->provider = $storage->factoryProvider();
         $this->provider->setMediaCollection($this); // @todo
 
         return $this;

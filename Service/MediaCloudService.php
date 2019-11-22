@@ -47,19 +47,16 @@ class MediaCloudService
 
         // storages
         foreach ($config['storages'] as $name => $val) {
-            $providerClass = $val['provider'];
-            /** @var ProviderInterface $provider */
-            $provider = new $providerClass($container, $val['arguments']);
-
-            $s = new MediaStorage();
-            $s->setCode($val['code'])
+            $ms = new MediaStorage();
+            $ms->setCode($val['code'])
                 ->setTitle($val['title'])
                 ->setRelativePath($val['relative_path'])
-                ->setProvider($provider)
-                //->setArguments($val['arguments'])
+                ->setArguments($val['arguments'])
+                ->setProviderClass($val['provider'])
+                ->setContainer($container)
             ;
 
-            $this->storages[$val['code']] = $s;
+            $this->storages[$val['code']] = $ms;
         }
 
         $dbStorages = $em->getRepository(Storage::class)->findAll();
@@ -72,8 +69,9 @@ class MediaCloudService
             $s->setCode($dbStorage->getCode())
                 ->setTitle($dbStorage->getTitle())
                 ->setRelativePath($dbStorage->getRelativePath())
-                ->setProvider($dbStorage->getProvider())
+                ->setProviderClass($dbStorage->getProvider())
                 ->setArguments($dbStorage->getArguments())
+                ->setContainer($container)
             ;
 
             $this->storages[$dbStorage->getCode()] = $s;
@@ -81,8 +79,8 @@ class MediaCloudService
 
         // collections
         foreach ($config['collections'] as $name => $val) {
-            $c = new MediaCollection($container);
-            $c->setCode($val['code'])
+            $mc = new MediaCollection($container);
+            $mc->setCode($val['code'])
                 ->setTitle($val['title'])
                 ->setRelativePath($val['relative_path'])
                 ->setDefaultFilter($val['default_filter'])
@@ -92,7 +90,7 @@ class MediaCloudService
                 ->setStorage($this->storages[$val['storage']])
             ;
 
-            $this->collections[$val['code']] = $c;
+            $this->collections[$val['code']] = $mc;
         }
 
         $dbCollections = $em->getRepository(Collection::class)->findAll();
@@ -101,8 +99,8 @@ class MediaCloudService
                 throw new \Exception('Collection with code "'.$dbCollection->getCode().'" is already exist');
             }
 
-            $c = new MediaCollection($container);
-            $c->setCode($dbCollection->getCode())
+            $mc = new MediaCollection($container);
+            $mc->setCode($dbCollection->getCode())
                 ->setTitle($dbCollection->getTitle())
                 ->setRelativePath($dbCollection->getRelativePath())
                 ->setDefaultFilter($dbCollection->getDefaultFilter())
@@ -112,11 +110,8 @@ class MediaCloudService
                 ->setStorage($this->storages[$dbCollection->getStorage()->getCode()])
             ;
 
-            $this->collections[$dbCollection->getCode()] = $c;
+            $this->collections[$dbCollection->getCode()] = $mc;
         }
-
-//        dump($this->storages);
-//        dump($this->collections);
 
         $this->container = $container;
         $this->em        = $em;

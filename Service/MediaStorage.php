@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace SmartCore\Bundle\MediaBundle\Service;
 
 use SmartCore\Bundle\MediaBundle\Provider\ProviderInterface;
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
 class MediaStorage
 {
+    use ContainerAwareTrait;
+
     protected $code;
     protected $title;
     protected $relative_path;
 
-    /** @var ProviderInterface */
+    /**
+     * @var ProviderInterface
+     *
+     * @deprecated провайдер будет создваться для каждого хранилища отдельно
+     */
     protected $provider;
+
+    protected $providerClass;
     protected $arguments;
 
     /**
@@ -95,15 +104,21 @@ class MediaStorage
     /**
      * @return ProviderInterface
      */
-    public function getProvider(): ProviderInterface
+    public function factoryProvider(): ProviderInterface
     {
-        return $this->provider;
+        $providerClass = $this->getProviderClass();
+
+        $provider = new $providerClass($this->container, $this->getArguments());
+
+        return $provider;
     }
 
     /**
      * @param ProviderInterface $provider
      *
      * @return $this
+     *
+     * @deprecated
      */
     public function setProvider(ProviderInterface $provider): self
     {
@@ -128,6 +143,26 @@ class MediaStorage
     public function setArguments($arguments): self
     {
         $this->arguments = $arguments;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getProviderClass()
+    {
+        return $this->providerClass;
+    }
+
+    /**
+     * @param mixed $providerClass
+     *
+     * @return $this
+     */
+    public function setProviderClass($providerClass): self
+    {
+        $this->providerClass = $providerClass;
 
         return $this;
     }

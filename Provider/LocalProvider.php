@@ -34,7 +34,13 @@ class LocalProvider implements ProviderInterface
     /** @var Request */
     protected $request;
 
-    /** @var MediaCollection */
+    /**
+     * Используется только метод generateRelativePath
+     *
+     * @var MediaCollection
+     *
+     * @deprecated
+     */
     protected $mediaCollection;
 
     /**
