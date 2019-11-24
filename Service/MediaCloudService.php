@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SmartCore\Bundle\MediaBundle\Service;
 
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use SmartCore\Bundle\MediaBundle\Entity\Collection;
@@ -59,22 +60,27 @@ class MediaCloudService
             $this->storages[$val['code']] = $ms;
         }
 
-        $dbStorages = $em->getRepository(Storage::class)->findAll();
-        foreach ($dbStorages as $dbStorage) {
-            if (isset($this->storages[$dbStorage->getCode()])) {
-                throw new \Exception('Storage with code "'.$dbStorage->getCode().'" is already exist');
+        try {
+            $dbStorages = $em->getRepository(Storage::class)->findAll();
+
+            foreach ($dbStorages as $dbStorage) {
+                if (isset($this->storages[$dbStorage->getCode()])) {
+                    throw new \Exception('Storage with code "'.$dbStorage->getCode().'" is already exist');
+                }
+
+                $s = new MediaStorage();
+                $s->setCode($dbStorage->getCode())
+                    ->setTitle($dbStorage->getTitle())
+                    ->setRelativePath($dbStorage->getRelativePath())
+                    ->setProviderClass($dbStorage->getProvider())
+                    ->setArguments($dbStorage->getArguments())
+                    ->setContainer($container)
+                ;
+
+                $this->storages[$dbStorage->getCode()] = $s;
             }
-
-            $s = new MediaStorage();
-            $s->setCode($dbStorage->getCode())
-                ->setTitle($dbStorage->getTitle())
-                ->setRelativePath($dbStorage->getRelativePath())
-                ->setProviderClass($dbStorage->getProvider())
-                ->setArguments($dbStorage->getArguments())
-                ->setContainer($container)
-            ;
-
-            $this->storages[$dbStorage->getCode()] = $s;
+        } catch (TableNotFoundException $e) {
+            // @todo
         }
 
         // collections
@@ -93,24 +99,28 @@ class MediaCloudService
             $this->collections[$val['code']] = $mc;
         }
 
-        $dbCollections = $em->getRepository(Collection::class)->findAll();
-        foreach ($dbCollections as $dbCollection) {
-            if (isset($this->collections[$dbCollection->getCode()])) {
-                throw new \Exception('Collection with code "'.$dbCollection->getCode().'" is already exist');
+        try {
+            $dbCollections = $em->getRepository(Collection::class)->findAll();
+            foreach ($dbCollections as $dbCollection) {
+                if (isset($this->collections[$dbCollection->getCode()])) {
+                    throw new \Exception('Collection with code "'.$dbCollection->getCode().'" is already exist');
+                }
+
+                $mc = new MediaCollection($container);
+                $mc->setCode($dbCollection->getCode())
+                    ->setTitle($dbCollection->getTitle())
+                    ->setRelativePath($dbCollection->getRelativePath())
+                    ->setDefaultFilter($dbCollection->getDefaultFilter())
+                    ->setUploadFilter($dbCollection->getUploadFilter())
+                    ->setFilenamePattern($dbCollection->getFilenamePattern())
+                    ->setFileRelativePathPattern($dbCollection->getFileRelativePathPattern())
+                    ->setStorage($this->storages[$dbCollection->getStorage()->getCode()])
+                ;
+
+                $this->collections[$dbCollection->getCode()] = $mc;
             }
-
-            $mc = new MediaCollection($container);
-            $mc->setCode($dbCollection->getCode())
-                ->setTitle($dbCollection->getTitle())
-                ->setRelativePath($dbCollection->getRelativePath())
-                ->setDefaultFilter($dbCollection->getDefaultFilter())
-                ->setUploadFilter($dbCollection->getUploadFilter())
-                ->setFilenamePattern($dbCollection->getFilenamePattern())
-                ->setFileRelativePathPattern($dbCollection->getFileRelativePathPattern())
-                ->setStorage($this->storages[$dbCollection->getStorage()->getCode()])
-            ;
-
-            $this->collections[$dbCollection->getCode()] = $mc;
+        } catch (TableNotFoundException $e) {
+            // @todo
         }
 
         $this->container = $container;
